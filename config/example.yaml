@@ -1,0 +1,4 @@
+token: "YOUR_BOT_TOKEN_HERE"
+updates_strategy: "polling"  # or "webhook"
+database_dns: "postgresql+asyncpg://admin:admin@postgres:5432/checkers"
+host_url: null  # Set this if using webhook mode
