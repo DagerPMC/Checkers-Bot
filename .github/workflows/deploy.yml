@@ -22,6 +22,7 @@ jobs:
       - name: Deploy
         run: |
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+          (
             set -e
             cd /home/projects/Checkers-Bot
 
@@ -36,10 +37,11 @@ jobs:
             docker compose up -d postgres
 
             echo "Applying migrations..."
-            docker compose run --rm -T bot python -m alembic upgrade head || true
+            docker compose run --rm -T bot python -m alembic upgrade head
 
             echo "Restarting bot container..."
             docker compose up -d --no-deps --build bot
 
             echo "Deployment completed"
+          )
           EOF
