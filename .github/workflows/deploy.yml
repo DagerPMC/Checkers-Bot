@@ -25,7 +25,7 @@ jobs:
               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
                 set -e
                 cd /home/projects/Checkers-Bot
-                export GIT_SSH_COMMAND="ssh -i /home/deploy/.ssh/id_ed25519 -o IdentitiesOnly=yes"
+                export GIT_SSH_COMMAND="ssh -i /home/deploy/.ssh/deploy_key -o IdentitiesOnly=yes"
                 git pull origin main
                 docker compose up -d --build
           EOF
