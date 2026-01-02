@@ -29,7 +29,7 @@ jobs:
           
                 git pull origin master
                 echo "Applying migrations"
-                docker compose run --rm bot python -m alembic upgrade head
+                docker compose run --rm -T bot python -m alembic upgrade head
           
                 echo "Rebuilding image"
                 docker compose up -d --build --restart=always
