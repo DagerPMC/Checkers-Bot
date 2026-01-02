@@ -21,19 +21,15 @@ jobs:
 
       - name: Deploy
         run: |
-          ssh -p ${{ secrets.SSH_PORT }} \
-              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-                set -e
-                cd /home/projects/Checkers-Bot
-                export GIT_SSH_COMMAND="ssh -i /home/deploy/.ssh/deploy_key -o IdentitiesOnly=yes"
-                git pull origin master
-          
-                echo "Building an image"
-                docker compose build bot
-                
-                echo "Applying migrations"
-                docker compose run --rm -T bot python -m alembic upgrade head
-          
-                echo "Restarting services"
-                docker compose up -d --build --restart=always
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            set -e
+            cd /home/projects/Checkers-Bot
+            export GIT_SSH_COMMAND="ssh -i /home/deploy/.ssh/deploy_key -o IdentitiesOnly=yes"
+            
+            git pull origin master
+            echo "Applying migrations"
+            docker compose run --rm -T bot python -m alembic upgrade head
+            
+            echo "Rebuilding image"
+            docker compose up -d --build --restart=always
           EOF
