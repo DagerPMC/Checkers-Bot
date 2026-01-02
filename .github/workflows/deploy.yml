@@ -24,12 +24,21 @@ jobs:
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             set -e
             cd /home/projects/Checkers-Bot
-            export GIT_SSH_COMMAND="ssh -i /home/deploy/.ssh/deploy_key -o IdentitiesOnly=yes"
-            
+
+            echo "Pulling latest code..."
             git pull origin master
-            echo "Applying migrations"
-            docker compose run --rm -T bot python -m alembic upgrade head
-            
-            echo "Rebuilding image"
-            docker compose up -d --build --restart=always
+
+            echo "Building bot image..."
+            docker compose build bot
+
+            echo "Starting database..."
+            docker compose up -d postgres
+
+            echo "Applying migrations..."
+            docker compose exec -T bot python -m alembic upgrade head
+
+            echo "Restarting bot container..."
+            docker compose up -d --no-deps --build bot
+
+            echo "Deployment completed"
           EOF
