@@ -84,11 +84,11 @@ docker-compose exec bot alembic revision --autogenerate -m "description"
 
 ### Bot doesn't respond to inline queries
 - Make sure you enabled inline mode in BotFather (`/setinline`)
-- Check bot logs: `docker-compose logs -f bot`
+- Check bot logs: `docker compose logs -f bot`
 
 ### Database errors
-- Make sure migrations are applied: `docker-compose exec bot alembic upgrade head`
-- Check if PostgreSQL is running: `docker-compose ps postgres`
+- Make sure migrations are applied: `docker compose exec bot alembic upgrade head`
+- Check if PostgreSQL is running: `docker compose ps postgres`
 
 ### "Can't play against yourself" error
 - This is expected! You need two different Telegram accounts to test multiplayer

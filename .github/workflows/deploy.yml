@@ -26,6 +26,11 @@ jobs:
                 set -e
                 cd /home/projects/Checkers-Bot
                 export GIT_SSH_COMMAND="ssh -i /home/deploy/.ssh/deploy_key -o IdentitiesOnly=yes"
+          
                 git pull origin master
+                echo "Applying migrations"
+                docker compose exec bot alembic upgrade head
+          
+                echo "Rebuilding image"
                 docker compose up -d --build
           EOF
