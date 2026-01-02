@@ -1,6 +1,5 @@
-watchfiles==0.22.0
-ipython==8.26.0
-mypy==1.11.2
+watchfiles==1.0.3
+ipython==8.31.0
+mypy==1.13.0
 flake8==7.1.1
-black==24.8.0
 isort==5.13.2

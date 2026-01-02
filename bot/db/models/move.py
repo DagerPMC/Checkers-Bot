@@ -8,7 +8,7 @@ from bot.db.mixin import CreatedAtMixin
 from bot.db.types import game_fk, int_pk, user_fk
 
 if t.TYPE_CHECKING:
-    from bot.db.models import Game, User
+    from bot.db.models import Game
 
 
 class Move(Base, CreatedAtMixin):
@@ -24,5 +24,4 @@ class Move(Base, CreatedAtMixin):
     promoted: Mapped[bool] = mapped_column(default=False)
     move_number: Mapped[int]
 
-    # Relationships
     game: Mapped['Game'] = relationship(back_populates='moves')

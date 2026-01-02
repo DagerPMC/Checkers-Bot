@@ -9,9 +9,8 @@ class MoveType(StrEnum):
 
 @dataclass
 class Move:
-    """Represents a single move in checkers."""
-    from_pos: str  # e.g., "a3"
-    to_pos: str    # e.g., "b4"
+    from_pos: str
+    to_pos: str
     move_type: MoveType = MoveType.NORMAL
     captured_positions: list[str] | None = None
     promoted: bool = False
@@ -22,5 +21,7 @@ class Move:
 
     @property
     def is_capture(self) -> bool:
-        """Check if this move captures any pieces."""
-        return self.move_type == MoveType.CAPTURE and len(self.captured_positions or []) > 0
+        return (
+            self.move_type == MoveType.CAPTURE
+            and len(self.captured_positions or []) > 0
+        )

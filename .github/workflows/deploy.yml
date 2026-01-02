@@ -32,5 +32,5 @@ jobs:
                 docker compose exec bot alembic upgrade head
           
                 echo "Rebuilding image"
-                docker compose up -d --build
+                docker compose up -d --build --restart=always
           EOF

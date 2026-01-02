@@ -12,7 +12,7 @@ A Telegram bot for playing checkers with inline game invitations, real-time game
 
 ## Tech Stack
 
-- Python 3.11+
+- Python 3.13+
 - aiogram 3.x - Telegram bot framework
 - PostgreSQL - Database
 - SQLAlchemy 2.x - ORM

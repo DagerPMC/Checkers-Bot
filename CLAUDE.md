@@ -4,8 +4,7 @@
 A Telegram bot for playing checkers (draughts) with inline game invitations, real-time gameplay, and statistics tracking.
 
 ## Technology Stack
-Based on memefinder reference project at `../memefinder`:
-- **Python 3.11+**
+- **Python 3.13+**
 - **aiogram 3.x** - Modern async Telegram bot framework
 - **PostgreSQL** - Database for game state and statistics
 - **SQLAlchemy 2.x** - ORM for database operations
@@ -87,12 +86,13 @@ checkers/
 │   │       ├── user.py      # User model
 │   │       ├── game.py      # Game model
 │   │       └── move.py      # Move history model
-│   ├── game_logic/          # Checkers game engine
+│   ├── bl/                  # Business logic (game engine)
 │   │   ├── __init__.py
 │   │   ├── board.py         # Board representation
 │   │   ├── piece.py         # Piece logic
-│   │   ├── rules.py         # Game rules and validation
-│   │   └── move.py          # Move generation and execution
+│   │   ├── move.py          # Move generation and execution
+│   │   ├── game.py          # Game business logic
+│   │   └── user.py          # User business logic
 │   ├── middlewares/         # Bot middlewares
 │   │   ├── __init__.py
 │   │   ├── user.py          # User middleware
@@ -217,6 +217,25 @@ checkers/
 - Example: `move:uuid:a3-b4`, `accept:uuid`, `cancel:uuid`
 - Keep callback_data under 64 bytes
 - Use keyboard builders from aiogram
+
+### Code Quality Standards
+All code must adhere to PEP8 and pass local quality checks:
+
+- **PEP8 Compliance**: Follow Python Enhancement Proposal 8 style guide
+- **isort**: Import sorting configured in `.isort.cfg`
+  - Line length: 80 characters
+  - Multi-line output with trailing commas
+  - Run: `docker compose run --rm --no-deps bot isort bot/`
+- **flake8**: Code style linting configured in `.flake8`
+  - Max line length: 80 characters
+  - Ignores: E203, W503
+  - Run: `docker compose run --rm --no-deps bot flake8 bot/`
+- **mypy**: Static type checking configured in `mypy.ini`
+  - Python version: 3.13
+  - Strict type checking enabled
+  - Run: `docker compose run --rm --no-deps bot mypy bot/`
+
+All code must pass these checks before committing.
 
 ## Next Steps
 1. Set up project structure (Dockerfile, docker-compose, requirements)

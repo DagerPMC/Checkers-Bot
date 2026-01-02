@@ -4,10 +4,10 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from bot.db.models import Game, User
-from bot.db.models.game import GameStatus, PlayerColor
+from bot.bl.board import Board
+from bot.db.models import Game
+from bot.db.models.game import GameStatus
 from bot.db.session import s
-from bot.game_logic.board import Board
 
 
 async def create_game(
@@ -15,7 +15,6 @@ async def create_game(
     chat_id: int,
     message_id: int
 ) -> Game:
-    """Create a new game."""
     board = Board()
 
     game = Game(
@@ -28,18 +27,18 @@ async def create_game(
     s.session.add(game)
     await s.session.flush()
 
-    # Refresh to load relationships
     await s.session.refresh(game, ['white_player'])
 
     return game
 
 
 async def accept_game(game_id: UUID, black_player_id: int) -> Game | None:
-    """Accept a game invitation."""
-    # Get game with relationships loaded
     result = await s.session.execute(
         select(Game)
-        .options(selectinload(Game.white_player), selectinload(Game.black_player))
+        .options(
+            selectinload(Game.white_player),
+            selectinload(Game.black_player)
+        )
         .where(Game.id == game_id)
     )
     game = result.scalar_one_or_none()
@@ -51,14 +50,12 @@ async def accept_game(game_id: UUID, black_player_id: int) -> Game | None:
     game.status = GameStatus.ACTIVE
     await s.session.flush()
 
-    # Refresh to load the black_player relationship
     await s.session.refresh(game, ['black_player'])
 
     return game
 
 
 async def cancel_game(game_id: UUID) -> bool:
-    """Cancel a game invitation."""
     result = await s.session.execute(
         select(Game).where(Game.id == game_id)
     )
@@ -74,20 +71,24 @@ async def cancel_game(game_id: UUID) -> bool:
 
 
 async def get_game(game_id: UUID) -> Game | None:
-    """Get game by ID with eagerly loaded relationships."""
     result = await s.session.execute(
         select(Game)
-        .options(selectinload(Game.white_player), selectinload(Game.black_player))
+        .options(
+            selectinload(Game.white_player),
+            selectinload(Game.black_player)
+        )
         .where(Game.id == game_id)
     )
     return result.scalar_one_or_none()
 
 
 async def finish_game(game_id: UUID, winner_id: int | None) -> Game | None:
-    """Finish a game and update statistics. winner_id=None means draw."""
     result = await s.session.execute(
         select(Game)
-        .options(selectinload(Game.white_player), selectinload(Game.black_player))
+        .options(
+            selectinload(Game.white_player),
+            selectinload(Game.black_player)
+        )
         .where(Game.id == game_id)
     )
     game = result.scalar_one_or_none()
@@ -99,7 +100,6 @@ async def finish_game(game_id: UUID, winner_id: int | None) -> Game | None:
     game.winner_id = winner_id
     game.finished_at = datetime.utcnow()
 
-    # Update user statistics - they're already loaded via selectinload
     white_player = game.white_player
     black_player = game.black_player
 
@@ -113,7 +113,6 @@ async def finish_game(game_id: UUID, winner_id: int | None) -> Game | None:
         elif winner_id == black_player.id:
             black_player.wins += 1
             white_player.losses += 1
-        # If winner_id is None, it's a draw - no wins/losses updated
 
     await s.session.flush()
 

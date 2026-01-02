@@ -19,12 +19,10 @@ class User(Base, CreatedAtMixin):
     first_name: Mapped[str]
     last_name: Mapped[str | None]
 
-    # Statistics
     total_games: Mapped[int] = mapped_column(default=0)
     wins: Mapped[int] = mapped_column(default=0)
     losses: Mapped[int] = mapped_column(default=0)
 
-    # Relationships
     games_as_white: Mapped[list['Game']] = relationship(
         foreign_keys='Game.white_player_id',
         back_populates='white_player',

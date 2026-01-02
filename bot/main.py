@@ -4,7 +4,10 @@ import logging
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiogram.webhook.aiohttp_server import (
+    SimpleRequestHandler,
+    setup_application,
+)
 from aiohttp import web
 
 from bot.config import Config, UpdateStrategy
@@ -23,8 +26,13 @@ app = web.Application()
 
 async def on_startup(dispatcher: Dispatcher, bot: Bot) -> None:
     await bot.delete_webhook(drop_pending_updates=False)
-    if Config.c.updates_strategy is UpdateStrategy.webhook and Config.c.host_url:
-        await bot.set_webhook(f'https://{Config.c.host_url}/webhook/main')
+    if (
+        Config.c.updates_strategy is UpdateStrategy.webhook
+        and Config.c.host_url
+    ):
+        await bot.set_webhook(
+            f'https://{Config.c.host_url}/webhook/main'
+        )
 
 
 def main() -> None:

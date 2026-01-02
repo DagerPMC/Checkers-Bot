@@ -1,9 +1,9 @@
 import typing as t
 from datetime import datetime
 from enum import StrEnum, auto
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-from sqlalchemy import JSON, BIGINT, Enum
+from sqlalchemy import BIGINT, JSON, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from bot.db.base import Base
@@ -11,7 +11,7 @@ from bot.db.mixin import CreatedUpdatedAtMixin
 from bot.db.types import user_fk, uuid_pk
 
 if t.TYPE_CHECKING:
-    from bot.db.models import User, Move
+    from bot.db.models import Move, User
 
 
 class GameStatus(StrEnum):
@@ -31,15 +31,12 @@ class Game(Base, CreatedUpdatedAtMixin):
 
     id: Mapped[uuid_pk] = mapped_column(default=uuid4)
 
-    # Players
     white_player_id: Mapped[user_fk]
     black_player_id: Mapped[user_fk | None]
 
-    # Chat info
     chat_id: Mapped[int] = mapped_column(BIGINT)
     message_id: Mapped[int] = mapped_column(BIGINT)
 
-    # Game state
     board_state: Mapped[dict] = mapped_column(JSON)
     current_turn: Mapped[PlayerColor] = mapped_column(
         Enum(PlayerColor), default=PlayerColor.WHITE
@@ -48,11 +45,9 @@ class Game(Base, CreatedUpdatedAtMixin):
         Enum(GameStatus), default=GameStatus.PENDING
     )
 
-    # Result
     winner_id: Mapped[int | None] = mapped_column(BIGINT, nullable=True)
     finished_at: Mapped[datetime | None]
 
-    # Relationships
     white_player: Mapped['User'] = relationship(
         foreign_keys='Game.white_player_id',
         back_populates='games_as_white'

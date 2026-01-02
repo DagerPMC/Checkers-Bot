@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     AsyncSessionTransaction,
     async_sessionmaker,
-    create_async_engine
+    create_async_engine,
 )
 
 from bot.config import Config

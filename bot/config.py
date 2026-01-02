@@ -13,7 +13,7 @@ class Settings(BaseModel):
     token: str
     updates_strategy: UpdateStrategy
     database_dns: str
-    host_url: str | None = None  # Required for webhook mode
+    host_url: str | None = None
 
 
 class Config(BaseModel):

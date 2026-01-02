@@ -22,7 +22,6 @@ async def create_or_update_user(
 
 
 async def get_user_stats(user_id: int) -> dict:
-    """Get user statistics."""
     user = await s.session.get(User, user_id)
     if not user:
         return {
@@ -32,7 +31,11 @@ async def get_user_stats(user_id: int) -> dict:
             "win_rate": 0.0
         }
 
-    win_rate = (user.wins / user.total_games * 100) if user.total_games > 0 else 0.0
+    win_rate = (
+        (user.wins / user.total_games * 100)
+        if user.total_games > 0
+        else 0.0
+    )
 
     return {
         "total_games": user.total_games,
