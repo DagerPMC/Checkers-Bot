@@ -16,7 +16,7 @@ class Board:
         "b8", "d8", "f8", "h8",
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.squares: Dict[str, Piece | None] = {
             pos: None for pos in self.POSITIONS
         }
