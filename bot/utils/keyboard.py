@@ -3,6 +3,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.bl.board import Board
 from bot.bl.piece import PieceColor
+from bot.middlewares.i18n import gettext as _
 
 
 def create_invitation_keyboard(game_id: str) -> InlineKeyboardMarkup:
@@ -10,13 +11,13 @@ def create_invitation_keyboard(game_id: str) -> InlineKeyboardMarkup:
 
     builder.row(
         InlineKeyboardButton(
-            text="✅ Accept & Join",
+            text=_('btn-accept-join'),
             callback_data=f"accept:{game_id}"
         )
     )
     builder.row(
         InlineKeyboardButton(
-            text="❌ Cancel",
+            text=_('btn-cancel'),
             callback_data=f"cancel:{game_id}"
         )
     )
@@ -86,11 +87,11 @@ def create_board_keyboard(
 
     builder.row(
         InlineKeyboardButton(
-            text="🏳️ Propose Draw",
+            text=_('btn-propose-draw'),
             callback_data=f"draw:{game_id}"
         ),
         InlineKeyboardButton(
-            text="🏴 Surrender",
+            text=_('btn-surrender'),
             callback_data=f"surrender:{game_id}"
         )
     )

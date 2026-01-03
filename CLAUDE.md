@@ -222,6 +222,7 @@ checkers/
 All code must adhere to PEP8 and pass local quality checks:
 
 - **PEP8 Compliance**: Follow Python Enhancement Proposal 8 style guide
+- **No Unnecessary Comments**: Do not write comments unless they explain complex business logic or non-obvious implementation details. Code should be self-documenting through clear variable/function names.
 - **isort**: Import sorting configured in `.isort.cfg`
   - Line length: 80 characters
   - Multi-line output with trailing commas

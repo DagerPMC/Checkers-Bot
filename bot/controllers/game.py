@@ -19,6 +19,7 @@ from bot.bl.game import (
 from bot.bl.piece import PieceColor
 from bot.db.models import User
 from bot.db.models.game import GameStatus, PlayerColor
+from bot.middlewares.i18n import gettext as _
 from bot.utils.keyboard import create_board_keyboard, create_invitation_keyboard
 
 router = Router()
@@ -56,9 +57,11 @@ async def handle_chosen_inline_result(
 
 
 @router.callback_query(F.data.startswith("accept:"))
-async def handle_accept_game(callback: CallbackQuery, user: User) -> None:
+async def handle_accept_game(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id_str = callback.data.split(":")[1]
 
@@ -69,7 +72,7 @@ async def handle_accept_game(callback: CallbackQuery, user: User) -> None:
         chat_id = 0
         message_id = 0
     else:
-        await callback.answer("Error: Could not identify message")
+        await callback.answer(_('notif-error-identify-message'))
         return
 
     if game_id_str == "new":
@@ -79,36 +82,38 @@ async def handle_accept_game(callback: CallbackQuery, user: User) -> None:
             message_id=message_id
         )
 
-        text = (f"🎮 <b>Checkers Game</b>\n\n"
-                f"⚪ White: {user.first_name}\n"
-                f"⚫ Black: <i>waiting...</i>\n\n"
-                f"Waiting for opponent to join...")
+        text = (
+            f"{_('game-header')}\n\n"
+            f"{_('game-white-player', name=user.first_name)}\n"
+            f"{_('game-black-waiting')}\n\n"
+            f"{_('game-waiting-opponent')}"
+        )
 
         keyboard = create_invitation_keyboard(str(game.id))
         await edit_game_message(callback, text, keyboard)
-        await callback.answer("Game created! Waiting for opponent...")
+        await callback.answer(_('notif-game-created'))
         return
 
     try:
         game_id = UUID(game_id_str)
     except ValueError:
-        await callback.answer("Invalid game ID")
+        await callback.answer(_('notif-invalid-game-id'))
         return
 
     maybe_game = await get_game(game_id)
     if not maybe_game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     game = maybe_game
     if game.white_player_id == user.id:
-        await callback.answer("You can't play against yourself!")
+        await callback.answer(_('notif-cant-play-yourself'))
         return
 
     accepted_game = await accept_game(game_id, user.id)
 
     if not accepted_game:
-        await callback.answer("Game already started or not available")
+        await callback.answer(_('notif-game-already-started'))
         return
 
     board = Board.from_dict(accepted_game.board_state)
@@ -120,49 +125,55 @@ async def handle_accept_game(callback: CallbackQuery, user: User) -> None:
         else "Unknown"
     )
 
-    text = (f"🎮 <b>Checkers Game</b>\n\n"
-            f"⚪ White: {white_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"Current turn: ⚪ White")
+    text = (
+        f"{_('game-header')}\n\n"
+        f"{_('game-white-player', name=white_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-current-turn-white')}"
+    )
 
     keyboard = create_board_keyboard(
         board, str(accepted_game.id), PieceColor.WHITE
     )
     await edit_game_message(callback, text, keyboard)
-    await callback.answer("Game started! White moves first.")
+    await callback.answer(_('notif-game-started'))
 
 
 @router.callback_query(F.data.startswith("cancel:"))
-async def handle_cancel_game(callback: CallbackQuery, user: User) -> None:
+async def handle_cancel_game(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id_str = callback.data.split(":")[1]
 
     if game_id_str == "new":
-        await edit_game_message(callback, "❌ Game invitation cancelled.")
-        await callback.answer("Game cancelled")
+        await edit_game_message(callback, _('game-cancelled'))
+        await callback.answer(_('notif-game-cancelled'))
         return
 
     try:
         game_id = UUID(game_id_str)
     except ValueError:
-        await callback.answer("Invalid game ID")
+        await callback.answer(_('notif-invalid-game-id'))
         return
 
     success = await cancel_game(game_id)
 
     if success:
-        await edit_game_message(callback, "❌ Game invitation cancelled.")
-        await callback.answer("Game cancelled")
+        await edit_game_message(callback, _('game-cancelled'))
+        await callback.answer(_('notif-game-cancelled'))
     else:
-        await callback.answer("Failed to cancel game")
+        await callback.answer(_('notif-failed-cancel'))
 
 
 @router.callback_query(F.data.startswith("select:"))
-async def handle_select_piece(callback: CallbackQuery, user: User) -> None:
+async def handle_select_piece(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     parts = callback.data.split(":")
     game_id = UUID(parts[1])
@@ -170,7 +181,7 @@ async def handle_select_piece(callback: CallbackQuery, user: User) -> None:
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     current_color = (
@@ -184,7 +195,7 @@ async def handle_select_piece(callback: CallbackQuery, user: User) -> None:
         or (current_color == PieceColor.BLACK
             and game.black_player_id != user.id)
     ):
-        await callback.answer("It's not your turn!")
+        await callback.answer(_('notif-not-your-turn'))
         return
 
     board = Board.from_dict(game.board_state)
@@ -196,30 +207,37 @@ async def handle_select_piece(callback: CallbackQuery, user: User) -> None:
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_name = "White" if game.current_turn == PlayerColor.WHITE else "Black"
+    turn_color = _(
+        'color-white' if game.current_turn == PlayerColor.WHITE
+        else 'color-black'
+    )
 
-    text = (f"🎮 <b>Checkers Game</b>\n\n"
-            f"⚪ White: {white_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"Current turn: {turn_emoji} {turn_name}")
+    text = (
+        f"{_('game-header')}\n\n"
+        f"{_('game-white-player', name=white_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+    )
 
     keyboard = create_board_keyboard(
         board, str(game.id), current_color, selected_pos=position
     )
     await edit_game_message(callback, text, keyboard)
-    await callback.answer(f"Selected {position}")
+    await callback.answer(_('notif-selected-position', position=position))
 
 
 @router.callback_query(F.data.startswith("deselect:"))
-async def handle_deselect_piece(callback: CallbackQuery, user: User) -> None:
+async def handle_deselect_piece(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id = UUID(callback.data.split(":")[1])
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     board = Board.from_dict(game.board_state)
@@ -236,22 +254,29 @@ async def handle_deselect_piece(callback: CallbackQuery, user: User) -> None:
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_name = "White" if game.current_turn == PlayerColor.WHITE else "Black"
+    turn_color = _(
+        'color-white' if game.current_turn == PlayerColor.WHITE
+        else 'color-black'
+    )
 
-    text = (f"🎮 <b>Checkers Game</b>\n\n"
-            f"⚪ White: {white_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"Current turn: {turn_emoji} {turn_name}")
+    text = (
+        f"{_('game-header')}\n\n"
+        f"{_('game-white-player', name=white_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+    )
 
     keyboard = create_board_keyboard(board, str(game.id), current_color)
     await edit_game_message(callback, text, keyboard)
-    await callback.answer("Deselected")
+    await callback.answer(_('notif-deselected'))
 
 
 @router.callback_query(F.data.startswith("move:"))
-async def handle_move(callback: CallbackQuery, user: User) -> None:
+async def handle_move(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     parts = callback.data.split(":")
     game_id = UUID(parts[1])
@@ -260,7 +285,7 @@ async def handle_move(callback: CallbackQuery, user: User) -> None:
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     current_color = (
@@ -274,7 +299,7 @@ async def handle_move(callback: CallbackQuery, user: User) -> None:
         or (current_color == PieceColor.BLACK
             and game.black_player_id != user.id)
     ):
-        await callback.answer("It's not your turn!")
+        await callback.answer(_('notif-not-your-turn'))
         return
 
     board = Board.from_dict(game.board_state)
@@ -283,7 +308,7 @@ async def handle_move(callback: CallbackQuery, user: User) -> None:
     move = next((m for m in valid_moves if m.to_pos == to_pos), None)
 
     if not move:
-        await callback.answer("Invalid move!")
+        await callback.answer(_('notif-invalid-move'))
         return
 
     board.execute_move(move)
@@ -307,21 +332,24 @@ async def handle_move(callback: CallbackQuery, user: User) -> None:
 
         await finish_game(game_id, winner_id)
 
-        winner_name = (
-            "White" if winner_color == PieceColor.WHITE else "Black"
+        winner_name = _(
+            'color-white' if winner_color == PieceColor.WHITE
+            else 'color-black'
         )
         black_name = (
             game.black_player.first_name
             if game.black_player
             else 'Unknown'
         )
-        text = (f"🎮 <b>Checkers Game - Finished</b>\n\n"
-                f"⚪ White: {game.white_player.first_name}\n"
-                f"⚫ Black: {black_name}\n\n"
-                f"🏆 Winner: {winner_name}!")
+        text = (
+            f"{_('game-header-finished')}\n\n"
+            f"{_('game-white-player', name=game.white_player.first_name)}\n"
+            f"{_('game-black-player', name=black_name)}\n\n"
+            f"{_('game-winner', name=winner_name)}"
+        )
 
         await edit_game_message(callback, text)
-        await callback.answer(f"Game Over! {winner_name} wins!")
+        await callback.answer(_('notif-game-over', winner=winner_name))
         return
 
     game.board_state = board.to_dict()
@@ -354,44 +382,49 @@ async def handle_move(callback: CallbackQuery, user: User) -> None:
         turn_emoji = (
             "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
         )
-        turn_name = (
-            "White" if game.current_turn == PlayerColor.WHITE else "Black"
+        turn_color = _(
+            'color-white' if game.current_turn == PlayerColor.WHITE
+            else 'color-black'
         )
         next_color = (
             PieceColor.WHITE
             if game.current_turn == PlayerColor.WHITE
             else PieceColor.BLACK
         )
-        text = (f"🎮 <b>Checkers Game</b>\n\n"
-                f"⚪ White: {white_name}\n"
-                f"⚫ Black: {black_name}\n\n"
-                f"Current turn: {turn_emoji} {turn_name}")
+        text = (
+            f"{_('game-header')}\n\n"
+            f"{_('game-white-player', name=white_name)}\n"
+            f"{_('game-black-player', name=black_name)}\n\n"
+            f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+        )
         keyboard = create_board_keyboard(board, str(game.id), next_color)
         await edit_game_message(callback, text, keyboard)
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("draw:"))
-async def handle_draw_proposal(callback: CallbackQuery, user: User) -> None:
+async def handle_draw_proposal(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id = UUID(callback.data.split(":")[1])
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     if game.status != GameStatus.ACTIVE:
-        await callback.answer("Game is not active")
+        await callback.answer(_('notif-game-not-active'))
         return
 
     if user.id not in [game.white_player_id, game.black_player_id]:
-        await callback.answer("You are not playing in this game!")
+        await callback.answer(_('notif-not-in-game'))
         return
 
-    await callback.answer("Draw proposal sent!", show_alert=True)
+    await callback.answer(_('notif-draw-proposal-sent'), show_alert=True)
 
     white_name = game.white_player.first_name
     black_name = (
@@ -400,23 +433,28 @@ async def handle_draw_proposal(callback: CallbackQuery, user: User) -> None:
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_name = "White" if game.current_turn == PlayerColor.WHITE else "Black"
+    turn_color = _(
+        'color-white' if game.current_turn == PlayerColor.WHITE
+        else 'color-black'
+    )
     proposer_name = user.first_name
 
-    text = (f"🎮 <b>Checkers Game</b>\n\n"
-            f"⚪ White: {white_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"Current turn: {turn_emoji} {turn_name}\n\n"
-            f"🏳️ {proposer_name} proposes a draw!")
+    text = (
+        f"{_('game-header')}\n\n"
+        f"{_('game-white-player', name=white_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}\n\n"
+        f"{_('game-draw-proposal', name=proposer_name)}"
+    )
 
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text="✅ Accept Draw",
+            text=_('btn-accept-draw'),
             callback_data=f"draw_accept:{game_id}"
         ),
         InlineKeyboardButton(
-            text="❌ Decline Draw",
+            text=_('btn-decline-draw'),
             callback_data=f"draw_decline:{game_id}"
         )
     )
@@ -425,9 +463,11 @@ async def handle_draw_proposal(callback: CallbackQuery, user: User) -> None:
 
 
 @router.callback_query(F.data.startswith("draw_accept:"))
-async def handle_draw_accept(callback: CallbackQuery, user: User) -> None:
+async def handle_draw_accept(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id = UUID(callback.data.split(":")[1])
 
@@ -439,27 +479,31 @@ async def handle_draw_accept(callback: CallbackQuery, user: User) -> None:
             if game.black_player
             else 'Unknown'
         )
-        text = (f"🎮 <b>Checkers Game - Draw</b>\n\n"
-                f"⚪ White: {game.white_player.first_name}\n"
-                f"⚫ Black: {black_name}\n\n"
-                f"🤝 Game ended in a draw!")
+        text = (
+            f"{_('game-header-draw')}\n\n"
+            f"{_('game-white-player', name=game.white_player.first_name)}\n"
+            f"{_('game-black-player', name=black_name)}\n\n"
+            f"{_('game-draw-ended')}"
+        )
 
         await edit_game_message(callback, text)
-        await callback.answer("Draw accepted!")
+        await callback.answer(_('notif-draw-accepted'))
     else:
-        await callback.answer("Error accepting draw")
+        await callback.answer(_('notif-error-accepting-draw'))
 
 
 @router.callback_query(F.data.startswith("draw_decline:"))
-async def handle_draw_decline(callback: CallbackQuery, user: User) -> None:
+async def handle_draw_decline(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id = UUID(callback.data.split(":")[1])
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     board = Board.from_dict(game.board_state)
@@ -476,39 +520,46 @@ async def handle_draw_decline(callback: CallbackQuery, user: User) -> None:
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_name = "White" if game.current_turn == PlayerColor.WHITE else "Black"
+    turn_color = _(
+        'color-white' if game.current_turn == PlayerColor.WHITE
+        else 'color-black'
+    )
 
-    text = (f"🎮 <b>Checkers Game</b>\n\n"
-            f"⚪ White: {white_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"Current turn: {turn_emoji} {turn_name}")
+    text = (
+        f"{_('game-header')}\n\n"
+        f"{_('game-white-player', name=white_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+    )
 
     keyboard = create_board_keyboard(board, str(game.id), current_color)
     await edit_game_message(callback, text, keyboard)
-    await callback.answer("Draw declined. Game continues!")
+    await callback.answer(_('notif-draw-declined'))
 
 
 @router.callback_query(F.data.startswith("surrender:"))
-async def handle_surrender(callback: CallbackQuery, user: User) -> None:
+async def handle_surrender(
+    callback: CallbackQuery, user: User
+) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id = UUID(callback.data.split(":")[1])
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     if game.status != GameStatus.ACTIVE:
-        await callback.answer("Game is not active")
+        await callback.answer(_('notif-game-not-active'))
         return
 
     if user.id not in [game.white_player_id, game.black_player_id]:
-        await callback.answer("You are not playing in this game!")
+        await callback.answer(_('notif-not-in-game'))
         return
 
-    await callback.answer("Confirm surrender?", show_alert=True)
+    await callback.answer()
 
     white_name = game.white_player.first_name
     black_name = (
@@ -517,22 +568,27 @@ async def handle_surrender(callback: CallbackQuery, user: User) -> None:
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_name = "White" if game.current_turn == PlayerColor.WHITE else "Black"
+    turn_color = _(
+        'color-white' if game.current_turn == PlayerColor.WHITE
+        else 'color-black'
+    )
 
-    text = (f"🎮 <b>Checkers Game</b>\n\n"
-            f"⚪ White: {white_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"Current turn: {turn_emoji} {turn_name}\n\n"
-            f"🏴 {user.first_name} wants to surrender!")
+    text = (
+        f"{_('game-header')}\n\n"
+        f"{_('game-white-player', name=white_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}\n\n"
+        f"{_('game-surrender-proposal', name=user.first_name)}"
+    )
 
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text="✅ Confirm Surrender",
+            text=_('btn-confirm-surrender'),
             callback_data=f"surrender_confirm:{game_id}"
         ),
         InlineKeyboardButton(
-            text="❌ Cancel",
+            text=_('btn-cancel'),
             callback_data=f"surrender_cancel:{game_id}"
         )
     )
@@ -545,21 +601,21 @@ async def handle_surrender_confirm(
     callback: CallbackQuery, user: User
 ) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id = UUID(callback.data.split(":")[1])
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     if user.id == game.white_player_id:
         winner_id = game.black_player_id
-        winner_name = "Black"
+        winner_name = _('color-black')
     else:
         winner_id = game.white_player_id
-        winner_name = "White"
+        winner_name = _('color-white')
 
     await finish_game(game_id, winner_id)
 
@@ -568,13 +624,15 @@ async def handle_surrender_confirm(
         if game.black_player
         else 'Unknown'
     )
-    text = (f"🎮 <b>Checkers Game - Finished</b>\n\n"
-            f"⚪ White: {game.white_player.first_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"🏆 {winner_name} wins by surrender!")
+    text = (
+        f"{_('game-header-finished')}\n\n"
+        f"{_('game-white-player', name=game.white_player.first_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-winner-by-surrender', name=winner_name)}"
+    )
 
     await edit_game_message(callback, text)
-    await callback.answer(f"{winner_name} wins!")
+    await callback.answer(_('notif-surrender-winner', winner=winner_name))
 
 
 @router.callback_query(F.data.startswith("surrender_cancel:"))
@@ -582,13 +640,13 @@ async def handle_surrender_cancel(
     callback: CallbackQuery, user: User
 ) -> None:
     if not callback.data:
-        await callback.answer("Invalid request")
+        await callback.answer(_('notif-invalid-request'))
         return
     game_id = UUID(callback.data.split(":")[1])
 
     game = await get_game(game_id)
     if not game:
-        await callback.answer("Game not found")
+        await callback.answer(_('notif-game-not-found'))
         return
 
     board = Board.from_dict(game.board_state)
@@ -605,16 +663,21 @@ async def handle_surrender_cancel(
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_name = "White" if game.current_turn == PlayerColor.WHITE else "Black"
+    turn_color = _(
+        'color-white' if game.current_turn == PlayerColor.WHITE
+        else 'color-black'
+    )
 
-    text = (f"🎮 <b>Checkers Game</b>\n\n"
-            f"⚪ White: {white_name}\n"
-            f"⚫ Black: {black_name}\n\n"
-            f"Current turn: {turn_emoji} {turn_name}")
+    text = (
+        f"{_('game-header')}\n\n"
+        f"{_('game-white-player', name=white_name)}\n"
+        f"{_('game-black-player', name=black_name)}\n\n"
+        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+    )
 
     keyboard = create_board_keyboard(board, str(game.id), current_color)
     await edit_game_message(callback, text, keyboard)
-    await callback.answer("Surrender cancelled. Game continues!")
+    await callback.answer(_('notif-surrender-cancelled'))
 
 
 @router.callback_query(F.data == "noop")

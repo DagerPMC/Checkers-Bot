@@ -13,6 +13,7 @@ from aiohttp import web
 from bot.config import Config, UpdateStrategy
 from bot.controllers.router import router
 from bot.db.session import init_session
+from bot.middlewares.i18n import setup_i18n
 from bot.middlewares.session import session_middleware
 from bot.middlewares.throttling import ThrottlingMiddleware
 from bot.middlewares.user import user_middleware
@@ -46,6 +47,10 @@ def main() -> None:
     dp = Dispatcher()
     dp.startup.register(on_startup)
     dp.update.outer_middleware(session_middleware)
+
+    i18n, i18n_middleware = setup_i18n()
+    i18n_middleware.setup(dp)
+
     dp.update.outer_middleware(user_middleware)
     dp.update.outer_middleware(ThrottlingMiddleware(rate_limit=0.5))
 

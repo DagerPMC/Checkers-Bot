@@ -1,0 +1,176 @@
+msgid "start-message"
+msgstr "👋 Ласкаво просимо до бота Шашки, {user_name}!\n\nЩоб розпочати гру:\n1. Введіть @{bot_username} у будь-якому чаті\n2. Оберіть 'Розпочати гру в шашки'\n3. Дочекайтеся підтвердження!\n\nКоманди:\n/stats - Переглянути статистику\n/help - Показати це повідомлення"
+
+msgid "stats-header"
+msgstr "📊 <b>Ваша статистика</b>"
+
+msgid "stats-total-games"
+msgstr "🎮 Всього ігор: {count}"
+
+msgid "stats-wins"
+msgstr "🏆 Перемог: {count}"
+
+msgid "stats-losses"
+msgstr "💔 Поразок: {count}"
+
+msgid "stats-win-rate"
+msgstr "📈 Відсоток перемог: {rate}%"
+
+msgid "help-message"
+msgstr "🎮 <b>Як грати в шашки</b>\n\n<b>Початок гри:</b>\n• Використайте inline режим для відправки запрошення\n• Дочекайтеся підтвердження суперника\n\n<b>Гра:</b>\n• Натисніть на шашку, щоб вибрати її\n• Натисніть на зелене коло, щоб зробити хід\n• Бити обов'язково!\n• Дійдіть до протилежного краю, щоб отримати дамку\n\n<b>Перемога:</b>\n• Збийте всі шашки суперника\n• Заблокуйте можливість ходу суперника\n\n<b>Команди:</b>\n/stats - Переглянути статистику\n/help - Показати цю допомогу"
+
+msgid "inline-title"
+msgstr "🎮 Розпочати гру в шашки"
+
+msgid "inline-description"
+msgstr "Надіслати запрошення до гри в шашки в цей чат"
+
+msgid "inline-invitation-message"
+msgstr "🎮 <b>Запрошення до гри в шашки</b>\n\nНатисніть 'Прийняти' щоб почати гру!"
+
+msgid "btn-accept-join"
+msgstr "✅ Прийняти"
+
+msgid "btn-cancel"
+msgstr "❌ Скасувати"
+
+msgid "btn-propose-draw"
+msgstr "🏳️ Запропонувати нічию"
+
+msgid "btn-surrender"
+msgstr "🏴 Здатися"
+
+msgid "btn-accept-draw"
+msgstr "✅ Прийняти нічию"
+
+msgid "btn-decline-draw"
+msgstr "❌ Відхилити нічию"
+
+msgid "btn-confirm-surrender"
+msgstr "✅ Підтвердити здачу"
+
+msgid "game-header"
+msgstr "🎮 <b>Гра в шашки</b>"
+
+msgid "game-header-finished"
+msgstr "🎮 <b>Гра в шашки - Завершено</b>"
+
+msgid "game-header-draw"
+msgstr "🎮 <b>Гра в шашки - Нічия</b>"
+
+msgid "game-white-player"
+msgstr "⚪ Білі: {name}"
+
+msgid "game-black-player"
+msgstr "⚫ Чорні: {name}"
+
+msgid "game-black-waiting"
+msgstr "⚫ Чорні: <i>очікування...</i>"
+
+msgid "game-waiting-opponent"
+msgstr "Очікування суперника..."
+
+msgid "game-current-turn-white"
+msgstr "Зараз ходять: ⚪ Білі"
+
+msgid "game-current-turn-black"
+msgstr "Зараз ходять: ⚫ Чорні"
+
+msgid "game-current-turn"
+msgstr "Зараз ходять: {emoji} {color}"
+
+msgid "game-winner"
+msgstr "🏆 Переможець: {name}!"
+
+msgid "game-winner-by-surrender"
+msgstr "🏆 {name} перемагають здачею!"
+
+msgid "game-draw-ended"
+msgstr "🤝 Гра завершилася нічиєю!"
+
+msgid "game-draw-proposal"
+msgstr "🏳️ {name} пропонує нічию!"
+
+msgid "game-surrender-proposal"
+msgstr "🏴 {name} хоче здатися!"
+
+msgid "game-cancelled"
+msgstr "❌ Запрошення до гри скасовано."
+
+msgid "notif-invalid-request"
+msgstr "Невірний запит"
+
+msgid "notif-error-identify-message"
+msgstr "Помилка: Не вдалося ідентифікувати повідомлення"
+
+msgid "notif-game-created"
+msgstr "Гру створено! Очікування суперника..."
+
+msgid "notif-invalid-game-id"
+msgstr "Невірний ID гри"
+
+msgid "notif-game-not-found"
+msgstr "Гру не знайдено"
+
+msgid "notif-cant-play-yourself"
+msgstr "Ви не можете грати самі з собою!"
+
+msgid "notif-game-already-started"
+msgstr "Гру вже розпочато або недоступна"
+
+msgid "notif-game-started"
+msgstr "Гру розпочато! Білі ходять першими."
+
+msgid "notif-game-cancelled"
+msgstr "Гру скасовано"
+
+msgid "notif-failed-cancel"
+msgstr "Не вдалося скасувати гру"
+
+msgid "notif-not-your-turn"
+msgstr "Зараз не ваш хід!"
+
+msgid "notif-selected-position"
+msgstr "Вибрано {position}"
+
+msgid "notif-deselected"
+msgstr "Скасовано вибір"
+
+msgid "notif-invalid-move"
+msgstr "Неправильний хід!"
+
+msgid "notif-game-over"
+msgstr "Гру завершено! {winner} перемагають!"
+
+msgid "notif-game-not-active"
+msgstr "Гра неактивна"
+
+msgid "notif-not-in-game"
+msgstr "Ви не граєте в цій грі!"
+
+msgid "notif-draw-proposal-sent"
+msgstr "Пропозицію нічиї надіслано!"
+
+msgid "notif-draw-accepted"
+msgstr "Нічию прийнято!"
+
+msgid "notif-error-accepting-draw"
+msgstr "Помилка при прийнятті нічиї"
+
+msgid "notif-draw-declined"
+msgstr "Нічию відхилено. Гра продовжується!"
+
+msgid "notif-confirm-surrender"
+msgstr "Підтвердити здачу?"
+
+msgid "notif-surrender-winner"
+msgstr "{winner} перемагають!"
+
+msgid "notif-surrender-cancelled"
+msgstr "Здачу скасовано. Гра продовжується!"
+
+msgid "color-white"
+msgstr "Білі"
+
+msgid "color-black"
+msgstr "Чорні"

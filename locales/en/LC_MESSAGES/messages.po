@@ -1,0 +1,176 @@
+msgid "start-message"
+msgstr "👋 Welcome to Checkers Bot, {user_name}!\n\nTo start a game:\n1. Type @{bot_username} in any chat\n2. Select 'Start Checkers Game'\n3. Wait for someone to accept!\n\nCommands:\n/stats - View your statistics\n/help - Show this help message"
+
+msgid "stats-header"
+msgstr "📊 <b>Your Checkers Statistics</b>"
+
+msgid "stats-total-games"
+msgstr "🎮 Total Games: {count}"
+
+msgid "stats-wins"
+msgstr "🏆 Wins: {count}"
+
+msgid "stats-losses"
+msgstr "💔 Losses: {count}"
+
+msgid "stats-win-rate"
+msgstr "📈 Win Rate: {rate}%"
+
+msgid "help-message"
+msgstr "🎮 <b>How to Play Checkers</b>\n\n<b>Starting a Game:</b>\n• Use inline mode to send game invitation\n• Wait for opponent to accept\n\n<b>Playing:</b>\n• Tap a piece to select it\n• Tap a green circle to move there\n• Captures are mandatory!\n• Reach the opposite end to get a King\n\n<b>Winning:</b>\n• Capture all opponent pieces\n• Block opponent from moving\n\n<b>Commands:</b>\n/stats - View your statistics\n/help - Show this help"
+
+msgid "inline-title"
+msgstr "🎮 Start Checkers Game"
+
+msgid "inline-description"
+msgstr "Send a checkers game invitation to this chat"
+
+msgid "inline-invitation-message"
+msgstr "🎮 <b>Checkers Game Invitation</b>\n\nTap 'Accept & Join' to start playing!"
+
+msgid "btn-accept-join"
+msgstr "✅ Accept & Join"
+
+msgid "btn-cancel"
+msgstr "❌ Cancel"
+
+msgid "btn-propose-draw"
+msgstr "🏳️ Propose Draw"
+
+msgid "btn-surrender"
+msgstr "🏴 Surrender"
+
+msgid "btn-accept-draw"
+msgstr "✅ Accept Draw"
+
+msgid "btn-decline-draw"
+msgstr "❌ Decline Draw"
+
+msgid "btn-confirm-surrender"
+msgstr "✅ Confirm Surrender"
+
+msgid "game-header"
+msgstr "🎮 <b>Checkers Game</b>"
+
+msgid "game-header-finished"
+msgstr "🎮 <b>Checkers Game - Finished</b>"
+
+msgid "game-header-draw"
+msgstr "🎮 <b>Checkers Game - Draw</b>"
+
+msgid "game-white-player"
+msgstr "⚪ White: {name}"
+
+msgid "game-black-player"
+msgstr "⚫ Black: {name}"
+
+msgid "game-black-waiting"
+msgstr "⚫ Black: <i>waiting...</i>"
+
+msgid "game-waiting-opponent"
+msgstr "Waiting for opponent to join..."
+
+msgid "game-current-turn-white"
+msgstr "Current turn: ⚪ White"
+
+msgid "game-current-turn-black"
+msgstr "Current turn: ⚫ Black"
+
+msgid "game-current-turn"
+msgstr "Current turn: {emoji} {color}"
+
+msgid "game-winner"
+msgstr "🏆 Winner: {name}!"
+
+msgid "game-winner-by-surrender"
+msgstr "🏆 {name} wins by surrender!"
+
+msgid "game-draw-ended"
+msgstr "🤝 Game ended in a draw!"
+
+msgid "game-draw-proposal"
+msgstr "🏳️ {name} proposes a draw!"
+
+msgid "game-surrender-proposal"
+msgstr "🏴 {name} wants to surrender!"
+
+msgid "game-cancelled"
+msgstr "❌ Game invitation cancelled."
+
+msgid "notif-invalid-request"
+msgstr "Invalid request"
+
+msgid "notif-error-identify-message"
+msgstr "Error: Could not identify message"
+
+msgid "notif-game-created"
+msgstr "Game created! Waiting for opponent..."
+
+msgid "notif-invalid-game-id"
+msgstr "Invalid game ID"
+
+msgid "notif-game-not-found"
+msgstr "Game not found"
+
+msgid "notif-cant-play-yourself"
+msgstr "You can't play against yourself!"
+
+msgid "notif-game-already-started"
+msgstr "Game already started or not available"
+
+msgid "notif-game-started"
+msgstr "Game started! White moves first."
+
+msgid "notif-game-cancelled"
+msgstr "Game cancelled"
+
+msgid "notif-failed-cancel"
+msgstr "Failed to cancel game"
+
+msgid "notif-not-your-turn"
+msgstr "It's not your turn!"
+
+msgid "notif-selected-position"
+msgstr "Selected {position}"
+
+msgid "notif-deselected"
+msgstr "Deselected"
+
+msgid "notif-invalid-move"
+msgstr "Invalid move!"
+
+msgid "notif-game-over"
+msgstr "Game Over! {winner} wins!"
+
+msgid "notif-game-not-active"
+msgstr "Game is not active"
+
+msgid "notif-not-in-game"
+msgstr "You are not playing in this game!"
+
+msgid "notif-draw-proposal-sent"
+msgstr "Draw proposal sent!"
+
+msgid "notif-draw-accepted"
+msgstr "Draw accepted!"
+
+msgid "notif-error-accepting-draw"
+msgstr "Error accepting draw"
+
+msgid "notif-draw-declined"
+msgstr "Draw declined. Game continues!"
+
+msgid "notif-confirm-surrender"
+msgstr "Confirm surrender?"
+
+msgid "notif-surrender-winner"
+msgstr "{winner} wins!"
+
+msgid "notif-surrender-cancelled"
+msgstr "Surrender cancelled. Game continues!"
+
+msgid "color-white"
+msgstr "White"
+
+msgid "color-black"
+msgstr "Black"

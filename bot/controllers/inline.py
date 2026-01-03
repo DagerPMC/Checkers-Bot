@@ -7,6 +7,8 @@ from aiogram.types import (
     InputTextMessageContent,
 )
 
+from bot.middlewares.i18n import gettext as _
+
 router = Router()
 
 
@@ -14,11 +16,11 @@ router = Router()
 async def handle_inline_query(query: InlineQuery) -> None:
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
-            text="✅ Accept & Join",
+            text=_('btn-accept-join'),
             callback_data="accept:new"
         )],
         [InlineKeyboardButton(
-            text="❌ Cancel",
+            text=_('btn-cancel'),
             callback_data="cancel:new"
         )]
     ])
@@ -26,13 +28,10 @@ async def handle_inline_query(query: InlineQuery) -> None:
     results = [
         InlineQueryResultArticle(
             id="checkers_invite",
-            title="🎮 Start Checkers Game",
-            description="Send a checkers game invitation to this chat",
+            title=_('inline-title'),
+            description=_('inline-description'),
             input_message_content=InputTextMessageContent(
-                message_text=(
-                    "🎮 <b>Checkers Game Invitation</b>\n\n"
-                    "Tap 'Accept & Join' to start playing!"
-                ),
+                message_text=_('inline-invitation-message'),
                 parse_mode="HTML"
             ),
             reply_markup=keyboard,

@@ -44,7 +44,7 @@ tasks:
   isort:
     desc: Run isort
     deps: [ build ]
-    cmds: ['{{.DOCKER_RUN}} -T --no-deps bot isort ./bot']
+    cmds: ['{{.DOCKER_RUN}} -T --no-deps bot isort ./bot --overwrite-in-place']
 
   pre_commit:
     desc: Run pre commit scripts
