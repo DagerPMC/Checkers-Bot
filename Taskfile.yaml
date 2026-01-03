@@ -1,0 +1,96 @@
+version: '3'
+
+vars:
+  DOCKER_RUN: docker compose run --rm
+  PYTHON_RUN: docker compose run --rm bot python -m
+
+tasks:
+  default:
+    cmds:
+      - task: bot
+
+  project_setup:
+    desc: Set up working directory, create pre commit hooks
+    cmds:
+      - task: setup_precommit_run_hook
+
+  build:
+    desc: Build dev image
+    cmds: ['docker compose build bot']
+    sources:
+      - ./requirements/*.txt
+      - ./Dockerfile
+
+  .base_cfg: &base_cfg
+    deps: [ build ]
+    env: {OVERRIDE_CONFIG: './config/{{.ENV}}.yaml'}
+    vars: {ENV: '{{.ENV | default "local"}}'}
+
+  bot:
+    <<: *base_cfg
+    desc: Run service
+    cmds: ['docker compose up bot --no-log-prefix']
+
+  mypy:
+    desc: Run mypy
+    deps: [ build ]
+    cmds: ['{{.DOCKER_RUN}} -T --no-deps bot mypy {{.CLI_ARGS | default "./bot"}}']
+
+  flake8:
+    desc: Run flake8
+    deps: [ build ]
+    cmds: ['{{.DOCKER_RUN}} -T --no-deps bot flake8 ./bot']
+
+  isort:
+    desc: Run isort
+    deps: [ build ]
+    cmds: ['{{.DOCKER_RUN}} -T --no-deps bot isort ./bot']
+
+  pre_commit:
+    desc: Run pre commit scripts
+    deps: [ build ]
+    cmds:
+      - task: isort
+      - task: flake8
+      - task: mypy
+
+# alembic
+  check_db:
+    <<: *base_cfg
+    desc: Check Db schema
+    cmds: ['{{.PYTHON_RUN}} bot alembic check']
+
+  upgrade_db:
+    <<: *base_cfg
+    desc: Upgrade DB schema to a later version
+    cmds: ['{{.PYTHON_RUN}} bot alembic upgrade head']
+
+  downgrade_db:
+    <<: *base_cfg
+    desc: Revert DB schema to a previous version
+    cmds: [ '{{.PYTHON_RUN}} bot alembic downgrade {{.CLI_ARGS | default "base"}}' ]
+
+  make_migrations:
+    <<: *base_cfg
+    desc: Create a new revision file of DB schema, <task make_migrations -- message required>
+    status: ['task check_db']
+    cmds: ['CURRENT_UID=`id -u`:`id -g` {{.PYTHON_RUN}} bot alembic generate {{.CLI_ARGS}}' ]
+
+  empty_migrations:
+    <<: *base_cfg
+    desc: Create a new empty revision file of DB schema, <task empty_migrations -- message required>
+    cmds: ['CURRENT_UID=`id -u`:`id -g` {{.PYTHON_RUN}} bot alembic empty {{.CLI_ARGS}}' ]
+
+  bot_exec:
+    <<: *base_cfg
+    desc: Run bash inside bot container
+    cmds: [ '{{.DOCKER_RUN}} bot bash' ]
+
+  down:
+    desc: Run cleanup, drop db volume
+    cmds: [ 'docker compose down -v --remove-orphans' ]
+
+  setup_precommit_run_hook:
+    cmds:
+      - echo $'#!/usr/bin/env bash \n\ntask pre_commit' > .git/hooks/pre-commit
+      - chmod +x .git/hooks/pre-commit

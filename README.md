@@ -23,11 +23,12 @@ A Telegram bot for playing checkers with inline game invitations, real-time game
 ### 1. Prerequisites
 
 - Docker and docker-compose installed
+- [Task](https://taskfile.dev/) - Task runner (recommended)
 - Telegram Bot Token (get from [@BotFather](https://t.me/BotFather))
 
 ### 2. Configuration
 
-Copy the example config and add your bot token:
+Create your configuration file:
 
 ```bash
 cp config/example.yaml config/local.yaml
@@ -47,7 +48,7 @@ host_url: null  # Set this if using webhook mode
 Build and start the services:
 
 ```bash
-docker-compose up --build
+task bot
 ```
 
 The bot will automatically:
@@ -57,11 +58,8 @@ The bot will automatically:
 
 ### 4. Initialize Database
 
-Create the initial migration:
-
 ```bash
-docker-compose exec bot alembic revision --autogenerate -m "Initial migration"
-docker-compose exec bot alembic upgrade head
+task upgrade_db
 ```
 
 ## Usage
@@ -99,6 +97,33 @@ docker-compose exec bot alembic upgrade head
 
 ## Development
 
+### Available Tasks
+
+The project uses [Task](https://taskfile.dev/) for common operations:
+
+```bash
+# Run the bot
+task bot
+
+# Code quality checks
+task isort              # Sort imports
+task flake8             # Lint code
+task mypy               # Type checking
+task pre_commit         # Run all checks
+
+# Database operations
+task check_db           # Check schema status
+task upgrade_db         # Apply migrations
+task make_migrations -- "description"  # Create new migration
+task downgrade_db       # Revert migration
+
+# Utilities
+task bot_exec           # Open bash in container
+task build              # Build Docker image
+task down               # Clean up containers
+task project_setup      # Set up pre-commit hooks
+```
+
 ### Project Structure
 
 ```
@@ -106,8 +131,8 @@ checkers/
 ├── bot/
 │   ├── bl/              # Business logic
 │   ├── controllers/     # Route handlers
-│   ├── db/              # Database models
-│   ├── game_logic/      # Checkers game engine
+│   ├── db/              # Database models & session
+│   │   └── models/      # SQLAlchemy models
 │   ├── middlewares/     # Bot middlewares
 │   ├── utils/           # Utility functions
 │   └── main.py          # Entry point
@@ -115,7 +140,8 @@ checkers/
 ├── migrations/          # Alembic migrations
 ├── requirements/        # Python dependencies
 ├── Dockerfile
-└── docker-compose.yaml
+├── docker-compose.yaml
+└── Taskfile.yaml        # Task definitions
 ```
 
 ### Running Locally (without Docker)
@@ -144,14 +170,43 @@ alembic upgrade head
 python -m bot.main
 ```
 
+### Code Quality Standards
+
+All code must adhere to PEP8 and pass quality checks:
+
+```bash
+# Run all checks at once
+task pre_commit
+
+# Or run individually
+task isort    # Sort imports (line length: 80)
+task flake8   # Lint code (PEP8 compliance)
+task mypy     # Type checking (strict mode)
+```
+
+Configuration files:
+- `.isort.cfg` - Import sorting settings
+- `.flake8` - Linting rules
+- `mypy.ini` - Type checking configuration
+
 ### Creating Migrations
 
 After modifying database models:
 
 ```bash
-docker-compose exec bot alembic revision --autogenerate -m "Description of changes"
-docker-compose exec bot alembic upgrade head
+task make_migrations -- "Description of changes"
+task upgrade_db
 ```
+
+### Pre-commit Hooks
+
+Set up git hooks to run quality checks before commits:
+
+```bash
+task project_setup
+```
+
+This creates a pre-commit hook that automatically runs `task pre_commit` before each commit.
 
 ## Environment Variables
 
@@ -178,13 +233,13 @@ docker-compose exec bot alembic upgrade head
 
 ### Bot not responding
 - Check that the bot token is correct
-- Verify the bot is running: `docker-compose ps`
-- Check logs: `docker-compose logs -f bot`
+- Verify the bot is running: `docker compose ps`
+- Check logs: `docker compose logs -f bot`
 
 ### Database connection errors
-- Ensure PostgreSQL is running: `docker-compose ps postgres`
+- Ensure PostgreSQL is running: `docker compose ps postgres`
 - Check database DNS in config file
-- Verify migrations are applied: `docker-compose exec bot alembic current`
+- Verify migrations are applied: `task check_db`
 
 ### Inline mode not working
 - Enable inline mode in @BotFather settings
