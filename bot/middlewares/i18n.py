@@ -12,7 +12,7 @@ class TelegramI18nMiddleware(I18nMiddleware):
         user: User | None = data.get("event_from_user")
         if user and user.language_code:
             lang = user.language_code.lower().split("-")[0]
-            if lang in ["uk", "ru"]:
+            if lang in ["uk"]:
                 return "uk"
             return "en"
         return self.i18n.default_locale

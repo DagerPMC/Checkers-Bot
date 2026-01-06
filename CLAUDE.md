@@ -1,15 +1,38 @@
-# Checkers Telegram Bot - Project Documentation
+# Checkers Telegram Bot
 
-## Project Overview
-A Telegram bot for playing checkers (draughts) with inline game invitations, real-time gameplay, and statistics tracking.
+Telegram bot for playing checkers (draughts) with inline game invitations, real-time gameplay, and statistics tracking.
 
-## Technology Stack
-- **Python 3.13+**
-- **aiogram 3.x** - Modern async Telegram bot framework
-- **PostgreSQL** - Database for game state and statistics
-- **SQLAlchemy 2.x** - ORM for database operations
-- **Docker + docker-compose** - Containerization
-- **asyncpg** - Async PostgreSQL driver
+### Slash Commands
+
+| Command | Description |
+|---------|-------------|
+| `/workflow [task]` | Full 7-phase workflow (problem → plan → implement → review → verify) |
+| `/plan [task]` | Create implementation plan using Planner subagent (opus) |
+| `/review-plan [plan.md]` | Review plan using Plan-Reviewer subagent (opus) |
+| `/gather-context [topic]` | Find 10-20 relevant files for a topic |
+| `/simplify [file\|staged]` | Simplify code using Code-Simplifier subagent |
+| `/review-code [file\|staged]` | Review code for bugs/vulnerabilities (opus) |
+| `/verify [problem]` | Verify implementation solves the problem |
+
+### Workflow Phases
+1. Problem clarification (requires approval)
+2. Context gathering
+3. Planning with subagent review (requires approval)
+4. Implementation
+5. Code quality review
+6. Verification and testing
+
+### Subagent Prompts
+Detailed prompts for each subagent are in `AGENTS.md` under "Subagent Specifications" section
+
+---
+
+## Tech Stack
+
+- Python 3.13, aiogram 3.x
+- PostgreSQL, SQLAlchemy 2.x (async), Alembic
+- Docker + docker-compose
+- Key packages: `asyncpg`, `pydantic`
 
 ## Requirements
 
@@ -63,102 +86,75 @@ After invitation is accepted:
 - NO Elo system
 - Simple gameplay and stats display
 
-## Project Structure (Following memefinder pattern)
+---
+
+## Directory Structure
 
 ```
 checkers/
-├── bot/
-│   ├── __init__.py
-│   ├── __main__.py
+├── bot/                     # Main application
 │   ├── main.py              # Entry point
 │   ├── config.py            # Configuration management
-│   ├── controllers/         # Handlers for different bot actions
-│   │   ├── __init__.py
-│   │   ├── router.py        # Main router
+│   ├── controllers/         # API handlers
+│   │   ├── router.py        # Router composition
 │   │   ├── inline.py        # Inline query handler
 │   │   ├── game.py          # Game logic handlers
 │   │   └── stats.py         # Statistics handlers
-│   ├── db/                  # Database models and session
-│   │   ├── __init__.py
-│   │   ├── session.py       # DB session management
-│   │   └── models/
-│   │       ├── __init__.py
-│   │       ├── user.py      # User model
-│   │       ├── game.py      # Game model
-│   │       └── move.py      # Move history model
-│   ├── bl/                  # Business logic (game engine)
-│   │   ├── __init__.py
+│   ├── db/                  # Database layer
+│   │   ├── session.py       # Session management
+│   │   └── models/          # SQLAlchemy models (User, Game, Move)
+│   ├── bl/                  # Business logic
 │   │   ├── board.py         # Board representation
 │   │   ├── piece.py         # Piece logic
-│   │   ├── move.py          # Move generation and execution
-│   │   ├── game.py          # Game business logic
-│   │   └── user.py          # User business logic
-│   ├── middlewares/         # Bot middlewares
-│   │   ├── __init__.py
+│   │   ├── move.py          # Move validation & execution
+│   │   ├── game.py          # Game engine
+│   │   └── user.py          # User logic
+│   ├── middlewares/         # Request processing
 │   │   ├── user.py          # User middleware
 │   │   └── session.py       # DB session middleware
-│   └── utils/               # Utility functions
-│       ├── __init__.py
-│       ├── setup.py         # Initialization utilities
-│       └── keyboard.py      # Inline keyboard generators
+│   └── utils/               # Utilities
+│       ├── setup.py         # Initialization
+│       └── keyboard.py      # Keyboard generators
 ├── config/
 │   └── local.yaml           # Local configuration
 ├── migrations/              # Alembic migrations
 ├── requirements/
-│   ├── prod.txt            # Production dependencies
-│   └── tools.txt           # Development dependencies
+│   ├── prod.txt             # Production dependencies
+│   └── tools.txt            # Development tools
 ├── Dockerfile
 ├── docker-compose.yaml
-├── alembic.ini
-├── .dockerignore
-├── .gitignore
-└── CLAUDE.md               # This file
+└── alembic.ini
 ```
+
+---
 
 ## Database Schema
 
-### Users Table
-```sql
-- id (PK, BigInt) - Telegram user ID
-- username (String, nullable)
-- first_name (String)
-- last_name (String, nullable)
-- created_at (DateTime)
-- total_games (Integer, default=0)
-- wins (Integer, default=0)
-- losses (Integer, default=0)
-```
+**Users** (Telegram user data & statistics)
+- `id` (PK, BigInt) - Telegram user ID
+- `username`, `first_name`, `last_name`
+- `total_games`, `wins`, `losses`
+- `created_at`
 
-### Games Table
-```sql
-- id (PK, UUID)
-- white_player_id (FK -> Users.id)
-- black_player_id (FK -> Users.id)
-- chat_id (BigInt)
-- message_id (BigInt)
-- board_state (JSON) - Current board representation
-- current_turn (Enum: WHITE, BLACK)
-- status (Enum: PENDING, ACTIVE, FINISHED, CANCELLED)
-- winner_id (FK -> Users.id, nullable)
-- created_at (DateTime)
-- updated_at (DateTime)
-- finished_at (DateTime, nullable)
-```
+**Games** (Game state & metadata)
+- `id` (PK, UUID)
+- `white_player_id`, `black_player_id` (FK -> Users)
+- `chat_id`, `message_id` (BigInt)
+- `board_state` (JSON) - Board representation
+- `current_turn` (Enum: WHITE, BLACK)
+- `status` (Enum: PENDING, ACTIVE, FINISHED, CANCELLED)
+- `winner_id` (FK -> Users, nullable)
+- `created_at`, `updated_at`, `finished_at`
 
-### Moves Table (Optional - for move history)
-```sql
-- id (PK, Integer)
-- game_id (FK -> Games.id)
-- player_id (FK -> Users.id)
-- from_position (String) - e.g., "a3"
-- to_position (String) - e.g., "b4"
-- captured_positions (JSON, nullable) - List of captured piece positions
-- promoted (Boolean, default=False)
-- move_number (Integer)
-- created_at (DateTime)
-```
+**Moves** (Move history, optional)
+- `id` (PK, Integer)
+- `game_id` (FK -> Games), `player_id` (FK -> Users)
+- `from_position`, `to_position` (e.g., "a3", "b4")
+- `captured_positions` (JSON) - Captured pieces
+- `promoted` (Boolean), `move_number`
+- `created_at`
 
-## Board State Representation (JSON)
+### Board State Format
 ```json
 {
   "squares": {
@@ -167,94 +163,115 @@ checkers/
     "a5": {"color": "black", "king": false},
     "h8": {"color": "black", "king": true}
   },
-  "must_capture": ["a3", "c3"]  // Pieces that must capture
+  "must_capture": ["a3", "c3"]
 }
 ```
 
-## Key Features to Implement
+---
 
-1. **Inline Query Handler**
-   - Respond to inline queries with "Start Checkers Game" option
-   - Generate invitation message with inline buttons
+## Key Features
 
-2. **Callback Handlers**
-   - Accept invitation → Create game, update message
-   - Cancel invitation → Delete message or mark as cancelled
-   - Move selection → Highlight possible moves
-   - Execute move → Update board, switch turn
+1. **Inline Query Handler** - Respond with "Start Checkers Game", generate invitation message
+2. **Callback Handlers** - Accept/cancel invitation, move selection, execute moves
+3. **Game Logic Engine** - Move validation, capture detection, king promotion, win/loss detection
+4. **Statistics System** - Track and display user stats
+5. **Board Rendering** - Convert game state to inline keyboard
 
-3. **Game Logic Engine**
-   - Move validation
-   - Capture detection (mandatory captures)
-   - King promotion
-   - Win/loss detection
-   - Board rendering to inline keyboard
+---
 
-4. **Statistics System**
-   - Update user stats on game completion
-   - Display user stats on command
+## Commands
 
-## Development Notes
+```bash
+# Setup (development)
+docker-compose up -d              # Start PostgreSQL
+python -m venv venv && source venv/bin/activate
+pip install -r requirements/prod.txt -r requirements/tools.txt
 
-### Docker Setup (from memefinder)
-- Multi-stage Dockerfile (base, prod, dev)
-- docker-compose with PostgreSQL service
-- Hot reload with watchfiles in dev mode
-- Volume mounting for local development
+# Database
+alembic upgrade head              # Run migrations
+alembic revision --autogenerate -m "description"
 
-### Bot Configuration
-- Support webhook and polling modes
-- Configuration via YAML file
+# Run bot
+python -m bot                     # Polling mode
+python -m bot --webhook           # Webhook mode
+
+# Code Quality
+isort bot/                        # Import sorting
+flake8 bot/                       # Linting
+mypy bot/                         # Type checking
+
+# Docker
+docker-compose run --rm --no-deps bot isort bot/
+docker-compose run --rm --no-deps bot flake8 bot/
+docker-compose run --rm --no-deps bot mypy bot/
+```
+
+---
+
+## Implementation Notes
+
+### Callback Data Format
+```
+action:game_id:data
+move:uuid:a3-b4
+accept:uuid
+cancel:uuid
+```
+Keep under 64 bytes, use aiogram keyboard builders
+
+### Configuration
+- Polling/webhook modes via YAML
 - Environment variables for secrets
+- Multi-stage Docker (base, prod, dev)
 
-### Middleware Pattern
-- Session middleware for DB access
-- User middleware for user management
-- Include in update pipeline
+### Middleware Pipeline
+- Session middleware (DB access)
+- User middleware (user management)
 
-### Inline Keyboard Best Practices
-- Use callback_data with format: `action:game_id:data`
-- Example: `move:uuid:a3-b4`, `accept:uuid`, `cancel:uuid`
-- Keep callback_data under 64 bytes
-- Use keyboard builders from aiogram
+---
 
-### Code Quality Standards
-All code must adhere to PEP8 and pass local quality checks:
+## Code Style
 
-- **PEP8 Compliance**: Follow Python Enhancement Proposal 8 style guide
-- **No Unnecessary Comments**: Do not write comments unless they explain complex business logic or non-obvious implementation details. Code should be self-documenting through clear variable/function names.
-- **isort**: Import sorting configured in `.isort.cfg`
-  - Line length: 80 characters
-  - Multi-line output with trailing commas
-  - Run: `docker compose run --rm --no-deps bot isort bot/`
-- **flake8**: Code style linting configured in `.flake8`
-  - Max line length: 80 characters
-  - Ignores: E203, W503
-  - Run: `docker compose run --rm --no-deps bot flake8 bot/`
-- **mypy**: Static type checking configured in `mypy.ini`
-  - Python version: 3.13
-  - Strict type checking enabled
-  - Run: `docker compose run --rm --no-deps bot mypy bot/`
+- Python 3.13 with type hints
+- 80 char line length, 4 spaces indentation
+- PEP8 compliance (isort, flake8, mypy)
+- Self-documenting code - avoid unnecessary comments
+- Async/await patterns throughout
 
-All code must pass these checks before committing.
+### Quality Checks (`.isort.cfg`, `.flake8`, `mypy.ini`)
+- **isort**: Import sorting, multi-line with trailing commas
+- **flake8**: Max line 80, ignores E203/W503
+- **mypy**: Strict type checking, Python 3.13
 
-## Next Steps
-1. Set up project structure (Dockerfile, docker-compose, requirements)
-2. Initialize PostgreSQL with SQLAlchemy models
-3. Set up Alembic migrations
-4. Implement game logic engine
-5. Create inline query and callback handlers
-6. Build keyboard generators for board display
-7. Implement statistics tracking
-8. Testing and refinement
+All code must pass quality checks before committing.
 
-## Important Emoji Reference
+---
+
+## Game Elements
+
+### Board Emojis
 - ⚪ White piece (U+26AA)
 - ⚫ Black piece (U+26AB)
 - ⬜ White king (U+2B1C)
 - ⬛ Black king (U+2B1B)
-- ⬝ Empty square option (U+2B1D) or • (U+2022)
+- ⬝ Empty square (U+2B1D) or • (U+2022)
 
-## Reference Projects
-- **memefinder** (`../memefinder`) - Telegram bot structure reference
-- Uses aiogram 3.x, PostgreSQL, Docker setup
+### Standard Rules
+- 8x8 board, diagonal movement on dark squares
+- Regular pieces move forward, kings move all directions
+- Mandatory captures, chain captures allowed
+- Promotion to king at opposite end
+- Win: capture all pieces or block all moves
+
+---
+
+## Important Notes
+
+- Follow aiogram 3.x async patterns
+- Use SQLAlchemy async sessions
+- Keep callback_data under 64 bytes
+- Follow existing middleware pipeline pattern
+- Reference `../memefinder` for bot structure patterns
+- Use keyboard builders for inline keyboards
+- Mock external dependencies in tests
+- Do not create context.md

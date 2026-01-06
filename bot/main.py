@@ -52,7 +52,7 @@ def main() -> None:
     i18n_middleware.setup(dp)
 
     dp.update.outer_middleware(user_middleware)
-    dp.update.outer_middleware(ThrottlingMiddleware(rate_limit=0.5))
+    dp.update.outer_middleware(ThrottlingMiddleware(rate_limit=0.3))
 
     dp.include_router(router)
     loop = asyncio.new_event_loop()

@@ -134,16 +134,24 @@ class Board:
 
         return moves
 
-    def _get_single_captures(self, pos: str, piece: Piece) -> List[Move]:
+    def _get_single_captures(
+        self,
+        pos: str,
+        piece: Piece,
+        excluded_positions: List[str] | None = None
+    ) -> List[Move]:
         captures = []
         col, row = self.pos_to_coords(pos)
 
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
+        excluded = excluded_positions or []
+
         for dc, dr in directions:
             if piece.is_king():
+                direction_captures: List[Move] = []
                 distance = 1
-                captured_piece_pos = None
+                captured_piece_pos: str | None = None
 
                 while True:
                     check_col = col + (dc * distance)
@@ -152,6 +160,11 @@ class Board:
 
                     if not check_pos:
                         break
+
+                    # Skip excluded positions (already captured in chain)
+                    if check_pos in excluded:
+                        distance += 1
+                        continue
 
                     check_piece = self.get_piece(check_pos)
 
@@ -171,9 +184,30 @@ class Board:
                                 move_type=MoveType.CAPTURE,
                                 captured_positions=[captured_piece_pos]
                             )
-                            captures.append(move)
+                            direction_captures.append(move)
 
                     distance += 1
+
+                # Filter: if any landing enables chain, only keep those
+                if direction_captures:
+                    can_continue = []
+                    cannot_continue = []
+
+                    for move in direction_captures:
+                        further = self._get_single_captures(
+                            move.to_pos,
+                            piece,
+                            move.captured_positions
+                        )
+                        if further:
+                            can_continue.append(move)
+                        else:
+                            cannot_continue.append(move)
+
+                    if can_continue:
+                        captures.extend(can_continue)
+                    else:
+                        captures.extend(cannot_continue)
             else:
                 mid_col, mid_row = col + dc, row + dr
                 mid_pos = self.coords_to_pos(mid_col, mid_row)

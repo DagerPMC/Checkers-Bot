@@ -2,11 +2,12 @@ from time import time
 from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
-from aiogram.types import CallbackQuery, TelegramObject
+from aiogram.methods import AnswerCallbackQuery
+from aiogram.types import TelegramObject, Update
 
 
 class ThrottlingMiddleware(BaseMiddleware):
-    def __init__(self, rate_limit: float = 0.5):
+    def __init__(self, rate_limit: float = 0.3):
         self.rate_limit = rate_limit
         self.user_timestamps: Dict[int, float] = {}
 
@@ -16,6 +17,7 @@ class ThrottlingMiddleware(BaseMiddleware):
         event: TelegramObject,
         data: Dict[str, Any],
     ) -> Any:
+        assert isinstance(event, Update)
         user = data.get("event_from_user")
 
         if not user:
@@ -28,11 +30,11 @@ class ThrottlingMiddleware(BaseMiddleware):
             time_passed = current_time - self.user_timestamps[user_id]
 
             if time_passed < self.rate_limit:
-                if isinstance(event, CallbackQuery):
-                    await event.answer(
-                        "Too many requests, please slow down",
-                        show_alert=False
-                    )
+                if event.callback_query is not None:
+                    await AnswerCallbackQuery(
+                        callback_query_id=event.callback_query.id,
+                        text='Too many requests. Slow down',
+                    ).as_(data.get('bot'))
                 return None
 
         self.user_timestamps[user_id] = current_time
