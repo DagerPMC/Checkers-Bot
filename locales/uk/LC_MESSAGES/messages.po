@@ -174,3 +174,45 @@ msgstr "Білі"
 
 msgid "color-black"
 msgstr "Чорні"
+
+msgid "history-title"
+msgstr "📜 Гра з {opponent}"
+
+msgid "history-description"
+msgstr "{result} - {date}"
+
+msgid "history-message"
+msgstr "📜 <b>Історія гри</b>\n\nПроти: {opponent}\nРезультат: {result}\nДата: {date}"
+
+msgid "history-result-won"
+msgstr "Перемога"
+
+msgid "history-result-lost"
+msgstr "Поразка"
+
+msgid "history-result-draw"
+msgstr "Нічия"
+
+msgid "btn-view-history"
+msgstr "📜 Переглянути історію"
+
+msgid "history-header"
+msgstr "📜 <b>Історія гри</b>"
+
+msgid "history-ended-draw"
+msgstr "🤝 Гра завершилася нічиєю"
+
+msgid "history-winner-white"
+msgstr "🏆 Білі перемогли!"
+
+msgid "history-winner-black"
+msgstr "🏆 Чорні перемогли!"
+
+msgid "history-initial-position"
+msgstr "📍 Початкова позиція"
+
+msgid "history-after-white-move"
+msgstr "Після ходу {move} (Білі)"
+
+msgid "history-after-black-move"
+msgstr "Після ходу {move} (Чорні)"

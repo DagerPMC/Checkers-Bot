@@ -174,3 +174,45 @@ msgstr "White"
 
 msgid "color-black"
 msgstr "Black"
+
+msgid "history-title"
+msgstr "📜 Game vs {opponent}"
+
+msgid "history-description"
+msgstr "{result} - {date}"
+
+msgid "history-message"
+msgstr "📜 <b>Game History</b>\n\nVs: {opponent}\nResult: {result}\nDate: {date}"
+
+msgid "history-result-won"
+msgstr "Won"
+
+msgid "history-result-lost"
+msgstr "Lost"
+
+msgid "history-result-draw"
+msgstr "Draw"
+
+msgid "btn-view-history"
+msgstr "📜 View History"
+
+msgid "history-header"
+msgstr "📜 <b>Game History</b>"
+
+msgid "history-ended-draw"
+msgstr "🤝 Game ended in draw"
+
+msgid "history-winner-white"
+msgstr "🏆 White won!"
+
+msgid "history-winner-black"
+msgstr "🏆 Black won!"
+
+msgid "history-initial-position"
+msgstr "📍 Initial position"
+
+msgid "history-after-white-move"
+msgstr "After move {move} (White)"
+
+msgid "history-after-black-move"
+msgstr "After move {move} (Black)"

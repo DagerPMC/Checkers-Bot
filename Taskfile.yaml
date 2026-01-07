@@ -58,28 +58,28 @@ tasks:
   check_db:
     <<: *base_cfg
     desc: Check Db schema
-    cmds: ['{{.PYTHON_RUN}} bot alembic check']
+    cmds: ['{{.DOCKER_RUN}} bot alembic check']
 
   upgrade_db:
     <<: *base_cfg
     desc: Upgrade DB schema to a later version
-    cmds: ['{{.PYTHON_RUN}} bot alembic upgrade head']
+    cmds: ['{{.DOCKER_RUN}} bot alembic upgrade head']
 
   downgrade_db:
     <<: *base_cfg
     desc: Revert DB schema to a previous version
-    cmds: [ '{{.PYTHON_RUN}} bot alembic downgrade {{.CLI_ARGS | default "base"}}' ]
+    cmds: [ '{{.DOCKER_RUN}} bot alembic downgrade {{.CLI_ARGS | default "base"}}' ]
 
   make_migrations:
     <<: *base_cfg
     desc: Create a new revision file of DB schema, <task make_migrations -- message required>
     status: ['task check_db']
-    cmds: ['CURRENT_UID=`id -u`:`id -g` {{.PYTHON_RUN}} bot alembic generate {{.CLI_ARGS}}' ]
+    cmds: ['CURRENT_UID=`id -u`:`id -g` {{.DOCKER_RUN}} bot alembic generate {{.CLI_ARGS}}' ]
 
   empty_migrations:
     <<: *base_cfg
     desc: Create a new empty revision file of DB schema, <task empty_migrations -- message required>
-    cmds: ['CURRENT_UID=`id -u`:`id -g` {{.PYTHON_RUN}} bot alembic empty {{.CLI_ARGS}}' ]
+    cmds: ['CURRENT_UID=`id -u`:`id -g` {{.DOCKER_RUN}} bot alembic empty {{.CLI_ARGS}}' ]
 
   bot_exec:
     <<: *base_cfg

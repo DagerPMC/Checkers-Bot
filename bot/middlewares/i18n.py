@@ -25,6 +25,20 @@ def gettext(singular: str, **kwargs: Any) -> str:
     return text
 
 
+def gettext_with_locale(singular: str, locale: str, **kwargs: Any) -> str:
+    import gettext as py_gettext
+    translations = py_gettext.translation(
+        domain='messages',
+        localedir='locales',
+        languages=[locale],
+        fallback=True
+    )
+    text = translations.gettext(singular)
+    if kwargs:
+        return text.format(**kwargs)
+    return text
+
+
 def setup_i18n() -> tuple[I18n, TelegramI18nMiddleware]:
     i18n = I18n(
         path="locales",

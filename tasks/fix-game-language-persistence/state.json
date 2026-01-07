@@ -1,0 +1,8 @@
+{
+  "task_name": "fix-game-language-persistence",
+  "current_phase": 7,
+  "completed_phases": [1, 2, 4, 5, 7],
+  "complexity": "small",
+  "status": "completed",
+  "updated_at": "2026-01-07T12:15:00Z"
+}

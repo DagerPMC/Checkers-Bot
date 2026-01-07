@@ -47,6 +47,7 @@ class Game(Base, CreatedUpdatedAtMixin):
 
     winner_id: Mapped[int | None] = mapped_column(BIGINT, nullable=True)
     finished_at: Mapped[datetime | None]
+    locale: Mapped[str] = mapped_column(default='en')
 
     white_player: Mapped['User'] = relationship(
         foreign_keys='Game.white_player_id',

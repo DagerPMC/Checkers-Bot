@@ -1,12 +1,18 @@
+from functools import partial
+
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.bl.board import Board
 from bot.bl.piece import PieceColor
-from bot.middlewares.i18n import gettext as _
+from bot.middlewares.i18n import gettext_with_locale
 
 
-def create_invitation_keyboard(game_id: str) -> InlineKeyboardMarkup:
+def create_invitation_keyboard(
+    game_id: str,
+    locale: str = 'en'
+) -> InlineKeyboardMarkup:
+    _ = partial(gettext_with_locale, locale=locale)
     builder = InlineKeyboardBuilder()
 
     builder.row(
@@ -29,8 +35,10 @@ def create_board_keyboard(
     board: Board,
     game_id: str,
     current_turn: PieceColor,
-    selected_pos: str | None = None
+    selected_pos: str | None = None,
+    locale: str = 'en'
 ) -> InlineKeyboardMarkup:
+    _ = partial(gettext_with_locale, locale=locale)
     builder = InlineKeyboardBuilder()
 
     valid_moves = []
@@ -95,5 +103,82 @@ def create_board_keyboard(
             callback_data=f"surrender:{game_id}"
         )
     )
+
+    return builder.as_markup()
+
+
+def create_history_board_keyboard(
+    board: Board,
+    game_id: str,
+    current_move: int,
+    total_moves: int
+) -> InlineKeyboardMarkup:
+    """Create non-interactive board with navigation buttons for history."""
+    builder = InlineKeyboardBuilder()
+
+    for row in range(7, -1, -1):
+        row_buttons = []
+
+        for col in range(8):
+            pos = Board.coords_to_pos(col, row)
+
+            if not pos or pos not in board.squares:
+                row_buttons.append(
+                    InlineKeyboardButton(text="  ", callback_data="noop")
+                )
+                continue
+
+            piece = board.get_piece(pos)
+            button_text = piece.to_emoji() if piece else "•"
+            row_buttons.append(
+                InlineKeyboardButton(text=button_text, callback_data="noop")
+            )
+
+        builder.row(*row_buttons)
+
+    # Navigation row: ⏮ ◀ [5/24] ▶ ⏭
+    nav_buttons = []
+
+    # Jump to start
+    nav_buttons.append(InlineKeyboardButton(
+        text="⏮",
+        callback_data=f"hv:{game_id}:0" if current_move > 0 else "noop"
+    ))
+
+    # Previous move
+    nav_buttons.append(InlineKeyboardButton(
+        text="◀",
+        callback_data=(
+            f"hv:{game_id}:{current_move - 1}" if current_move > 0 else "noop"
+        )
+    ))
+
+    # Move counter
+    nav_buttons.append(InlineKeyboardButton(
+        text=f"{current_move}/{total_moves}",
+        callback_data="noop"
+    ))
+
+    # Next move
+    nav_buttons.append(InlineKeyboardButton(
+        text="▶",
+        callback_data=(
+            f"hv:{game_id}:{current_move + 1}"
+            if current_move < total_moves
+            else "noop"
+        )
+    ))
+
+    # Jump to end
+    nav_buttons.append(InlineKeyboardButton(
+        text="⏭",
+        callback_data=(
+            f"hv:{game_id}:{total_moves}"
+            if current_move < total_moves
+            else "noop"
+        )
+    ))
+
+    builder.row(*nav_buttons)
 
     return builder.as_markup()

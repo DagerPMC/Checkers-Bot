@@ -275,3 +275,4 @@ All code must pass quality checks before committing.
 - Use keyboard builders for inline keyboards
 - Mock external dependencies in tests
 - Do not create context.md
+- DO NOT WRITE DOCSTRINGS AND COMMENTS

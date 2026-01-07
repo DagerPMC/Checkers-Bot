@@ -1,3 +1,4 @@
+from functools import partial
 from uuid import UUID
 
 from aiogram import F, Router
@@ -6,7 +7,9 @@ from aiogram.types import (
     ChosenInlineResult,
     InlineKeyboardButton,
 )
+from aiogram.types import User as TelegramUser
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from sqlalchemy import func, select
 
 from bot.bl.board import Board
 from bot.bl.game import (
@@ -17,10 +20,22 @@ from bot.bl.game import (
     get_game,
 )
 from bot.bl.piece import PieceColor
+from bot.db.models import Move as MoveModel
 from bot.db.models import User
 from bot.db.models.game import GameStatus, PlayerColor
+from bot.db.session import s
 from bot.middlewares.i18n import gettext as _
+from bot.middlewares.i18n import gettext_with_locale
 from bot.utils.keyboard import create_board_keyboard, create_invitation_keyboard
+
+
+def get_user_locale(telegram_user: TelegramUser | None) -> str:
+    if telegram_user and telegram_user.language_code:
+        lang = telegram_user.language_code.lower().split("-")[0]
+        if lang in ["uk"]:
+            return "uk"
+    return "en"
+
 
 router = Router()
 
@@ -76,20 +91,23 @@ async def handle_accept_game(
         return
 
     if game_id_str == "new":
+        locale = get_user_locale(callback.from_user)
         game = await create_game(
             white_player_id=user.id,
             chat_id=chat_id,
-            message_id=message_id
+            message_id=message_id,
+            locale=locale
         )
+        t = partial(gettext_with_locale, locale=locale)
 
         text = (
-            f"{_('game-header')}\n\n"
-            f"{_('game-white-player', name=user.first_name)}\n"
-            f"{_('game-black-waiting')}\n\n"
-            f"{_('game-waiting-opponent')}"
+            f"{t('game-header')}\n\n"
+            f"{t('game-white-player', name=user.first_name)}\n"
+            f"{t('game-black-waiting')}\n\n"
+            f"{t('game-waiting-opponent')}"
         )
 
-        keyboard = create_invitation_keyboard(str(game.id))
+        keyboard = create_invitation_keyboard(str(game.id), locale=locale)
         await edit_game_message(callback, text, keyboard)
         await callback.answer(_('notif-game-created'))
         return
@@ -116,6 +134,7 @@ async def handle_accept_game(
         await callback.answer(_('notif-game-already-started'))
         return
 
+    t = partial(gettext_with_locale, locale=accepted_game.locale)
     board = Board.from_dict(accepted_game.board_state)
 
     white_name = accepted_game.white_player.first_name
@@ -126,14 +145,15 @@ async def handle_accept_game(
     )
 
     text = (
-        f"{_('game-header')}\n\n"
-        f"{_('game-white-player', name=white_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-current-turn-white')}"
+        f"{t('game-header')}\n\n"
+        f"{t('game-white-player', name=white_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-current-turn-white')}"
     )
 
     keyboard = create_board_keyboard(
-        board, str(accepted_game.id), PieceColor.WHITE
+        board, str(accepted_game.id), PieceColor.WHITE,
+        locale=accepted_game.locale
     )
     await edit_game_message(callback, text, keyboard)
     await callback.answer(_('notif-game-started'))
@@ -159,13 +179,17 @@ async def handle_cancel_game(
         await callback.answer(_('notif-invalid-game-id'))
         return
 
-    success = await cancel_game(game_id)
-
-    if success:
-        await edit_game_message(callback, _('game-cancelled'))
-        await callback.answer(_('notif-game-cancelled'))
+    game = await get_game(game_id)
+    if game:
+        t = partial(gettext_with_locale, locale=game.locale)
+        success = await cancel_game(game_id)
+        if success:
+            await edit_game_message(callback, t('game-cancelled'))
+            await callback.answer(_('notif-game-cancelled'))
+        else:
+            await callback.answer(_('notif-failed-cancel'))
     else:
-        await callback.answer(_('notif-failed-cancel'))
+        await callback.answer(_('notif-game-not-found'))
 
 
 @router.callback_query(F.data.startswith("select:"))
@@ -184,6 +208,7 @@ async def handle_select_piece(
         await callback.answer(_('notif-game-not-found'))
         return
 
+    t = partial(gettext_with_locale, locale=game.locale)
     current_color = (
         PieceColor.WHITE
         if game.current_turn == PlayerColor.WHITE
@@ -207,20 +232,21 @@ async def handle_select_piece(
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_color = _(
+    turn_color = t(
         'color-white' if game.current_turn == PlayerColor.WHITE
         else 'color-black'
     )
 
     text = (
-        f"{_('game-header')}\n\n"
-        f"{_('game-white-player', name=white_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+        f"{t('game-header')}\n\n"
+        f"{t('game-white-player', name=white_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-current-turn', emoji=turn_emoji, color=turn_color)}"
     )
 
     keyboard = create_board_keyboard(
-        board, str(game.id), current_color, selected_pos=position
+        board, str(game.id), current_color, selected_pos=position,
+        locale=game.locale
     )
     await edit_game_message(callback, text, keyboard)
     await callback.answer(_('notif-selected-position', position=position))
@@ -240,6 +266,7 @@ async def handle_deselect_piece(
         await callback.answer(_('notif-game-not-found'))
         return
 
+    t = partial(gettext_with_locale, locale=game.locale)
     board = Board.from_dict(game.board_state)
     current_color = (
         PieceColor.WHITE
@@ -254,19 +281,21 @@ async def handle_deselect_piece(
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_color = _(
+    turn_color = t(
         'color-white' if game.current_turn == PlayerColor.WHITE
         else 'color-black'
     )
 
     text = (
-        f"{_('game-header')}\n\n"
-        f"{_('game-white-player', name=white_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+        f"{t('game-header')}\n\n"
+        f"{t('game-white-player', name=white_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-current-turn', emoji=turn_emoji, color=turn_color)}"
     )
 
-    keyboard = create_board_keyboard(board, str(game.id), current_color)
+    keyboard = create_board_keyboard(
+        board, str(game.id), current_color, locale=game.locale
+    )
     await edit_game_message(callback, text, keyboard)
     await callback.answer(_('notif-deselected'))
 
@@ -288,6 +317,7 @@ async def handle_move(
         await callback.answer(_('notif-game-not-found'))
         return
 
+    t = partial(gettext_with_locale, locale=game.locale)
     current_color = (
         PieceColor.WHITE
         if game.current_turn == PlayerColor.WHITE
@@ -313,6 +343,24 @@ async def handle_move(
 
     board.execute_move(move)
 
+    move_count_result = await s.session.execute(
+        select(func.count(MoveModel.id)).where(MoveModel.game_id == game.id)
+    )
+    move_count = move_count_result.scalar() or 0
+
+    db_move = MoveModel(
+        game_id=game.id,
+        player_id=user.id,
+        from_position=from_pos,
+        to_position=to_pos,
+        captured_positions=(
+            move.captured_positions if move.captured_positions else None
+        ),
+        promoted=move.promoted,
+        move_number=move_count + 1
+    )
+    s.session.add(db_move)
+
     continue_capturing = False
     if move.is_capture:
         piece = board.get_piece(to_pos)
@@ -332,7 +380,7 @@ async def handle_move(
 
         await finish_game(game_id, winner_id)
 
-        winner_name = _(
+        winner_name = t(
             'color-white' if winner_color == PieceColor.WHITE
             else 'color-black'
         )
@@ -342,10 +390,10 @@ async def handle_move(
             else 'Unknown'
         )
         text = (
-            f"{_('game-header-finished')}\n\n"
-            f"{_('game-white-player', name=game.white_player.first_name)}\n"
-            f"{_('game-black-player', name=black_name)}\n\n"
-            f"{_('game-winner', name=winner_name)}"
+            f"{t('game-header-finished')}\n\n"
+            f"{t('game-white-player', name=game.white_player.first_name)}\n"
+            f"{t('game-black-player', name=black_name)}\n\n"
+            f"{t('game-winner', name=winner_name)}"
         )
 
         await edit_game_message(callback, text)
@@ -363,7 +411,8 @@ async def handle_move(
 
     if continue_capturing:
         keyboard = create_board_keyboard(
-            board, str(game.id), current_color, selected_pos=to_pos
+            board, str(game.id), current_color, selected_pos=to_pos,
+            locale=game.locale
         )
         if callback.message and hasattr(callback.message, 'edit_reply_markup'):
             await callback.message.edit_reply_markup(reply_markup=keyboard)
@@ -382,7 +431,7 @@ async def handle_move(
         turn_emoji = (
             "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
         )
-        turn_color = _(
+        turn_color = t(
             'color-white' if game.current_turn == PlayerColor.WHITE
             else 'color-black'
         )
@@ -392,12 +441,14 @@ async def handle_move(
             else PieceColor.BLACK
         )
         text = (
-            f"{_('game-header')}\n\n"
-            f"{_('game-white-player', name=white_name)}\n"
-            f"{_('game-black-player', name=black_name)}\n\n"
-            f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+            f"{t('game-header')}\n\n"
+            f"{t('game-white-player', name=white_name)}\n"
+            f"{t('game-black-player', name=black_name)}\n\n"
+            f"{t('game-current-turn', emoji=turn_emoji, color=turn_color)}"
         )
-        keyboard = create_board_keyboard(board, str(game.id), next_color)
+        keyboard = create_board_keyboard(
+            board, str(game.id), next_color, locale=game.locale
+        )
         await edit_game_message(callback, text, keyboard)
     await callback.answer()
 
@@ -426,6 +477,7 @@ async def handle_draw_proposal(
 
     await callback.answer(_('notif-draw-proposal-sent'), show_alert=True)
 
+    t = partial(gettext_with_locale, locale=game.locale)
     white_name = game.white_player.first_name
     black_name = (
         game.black_player.first_name
@@ -433,28 +485,28 @@ async def handle_draw_proposal(
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_color = _(
+    turn_color = t(
         'color-white' if game.current_turn == PlayerColor.WHITE
         else 'color-black'
     )
     proposer_name = user.first_name
 
     text = (
-        f"{_('game-header')}\n\n"
-        f"{_('game-white-player', name=white_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}\n\n"
-        f"{_('game-draw-proposal', name=proposer_name)}"
+        f"{t('game-header')}\n\n"
+        f"{t('game-white-player', name=white_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-current-turn', emoji=turn_emoji, color=turn_color)}\n\n"
+        f"{t('game-draw-proposal', name=proposer_name)}"
     )
 
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text=_('btn-accept-draw'),
+            text=t('btn-accept-draw'),
             callback_data=f"draw_accept:{game_id}"
         ),
         InlineKeyboardButton(
-            text=_('btn-decline-draw'),
+            text=t('btn-decline-draw'),
             callback_data=f"draw_decline:{game_id}"
         )
     )
@@ -474,16 +526,17 @@ async def handle_draw_accept(
     game = await finish_game(game_id, None)
 
     if game:
+        t = partial(gettext_with_locale, locale=game.locale)
         black_name = (
             game.black_player.first_name
             if game.black_player
             else 'Unknown'
         )
         text = (
-            f"{_('game-header-draw')}\n\n"
-            f"{_('game-white-player', name=game.white_player.first_name)}\n"
-            f"{_('game-black-player', name=black_name)}\n\n"
-            f"{_('game-draw-ended')}"
+            f"{t('game-header-draw')}\n\n"
+            f"{t('game-white-player', name=game.white_player.first_name)}\n"
+            f"{t('game-black-player', name=black_name)}\n\n"
+            f"{t('game-draw-ended')}"
         )
 
         await edit_game_message(callback, text)
@@ -506,6 +559,7 @@ async def handle_draw_decline(
         await callback.answer(_('notif-game-not-found'))
         return
 
+    t = partial(gettext_with_locale, locale=game.locale)
     board = Board.from_dict(game.board_state)
     current_color = (
         PieceColor.WHITE
@@ -520,19 +574,21 @@ async def handle_draw_decline(
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_color = _(
+    turn_color = t(
         'color-white' if game.current_turn == PlayerColor.WHITE
         else 'color-black'
     )
 
     text = (
-        f"{_('game-header')}\n\n"
-        f"{_('game-white-player', name=white_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+        f"{t('game-header')}\n\n"
+        f"{t('game-white-player', name=white_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-current-turn', emoji=turn_emoji, color=turn_color)}"
     )
 
-    keyboard = create_board_keyboard(board, str(game.id), current_color)
+    keyboard = create_board_keyboard(
+        board, str(game.id), current_color, locale=game.locale
+    )
     await edit_game_message(callback, text, keyboard)
     await callback.answer(_('notif-draw-declined'))
 
@@ -561,6 +617,7 @@ async def handle_surrender(
 
     await callback.answer()
 
+    t = partial(gettext_with_locale, locale=game.locale)
     white_name = game.white_player.first_name
     black_name = (
         game.black_player.first_name
@@ -568,27 +625,27 @@ async def handle_surrender(
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_color = _(
+    turn_color = t(
         'color-white' if game.current_turn == PlayerColor.WHITE
         else 'color-black'
     )
 
     text = (
-        f"{_('game-header')}\n\n"
-        f"{_('game-white-player', name=white_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}\n\n"
-        f"{_('game-surrender-proposal', name=user.first_name)}"
+        f"{t('game-header')}\n\n"
+        f"{t('game-white-player', name=white_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-current-turn', emoji=turn_emoji, color=turn_color)}\n\n"
+        f"{t('game-surrender-proposal', name=user.first_name)}"
     )
 
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text=_('btn-confirm-surrender'),
+            text=t('btn-confirm-surrender'),
             callback_data=f"surrender_confirm:{game_id}"
         ),
         InlineKeyboardButton(
-            text=_('btn-cancel'),
+            text=t('btn-cancel'),
             callback_data=f"surrender_cancel:{game_id}"
         )
     )
@@ -610,12 +667,13 @@ async def handle_surrender_confirm(
         await callback.answer(_('notif-game-not-found'))
         return
 
+    t = partial(gettext_with_locale, locale=game.locale)
     if user.id == game.white_player_id:
         winner_id = game.black_player_id
-        winner_name = _('color-black')
+        winner_name = t('color-black')
     else:
         winner_id = game.white_player_id
-        winner_name = _('color-white')
+        winner_name = t('color-white')
 
     await finish_game(game_id, winner_id)
 
@@ -625,10 +683,10 @@ async def handle_surrender_confirm(
         else 'Unknown'
     )
     text = (
-        f"{_('game-header-finished')}\n\n"
-        f"{_('game-white-player', name=game.white_player.first_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-winner-by-surrender', name=winner_name)}"
+        f"{t('game-header-finished')}\n\n"
+        f"{t('game-white-player', name=game.white_player.first_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-winner-by-surrender', name=winner_name)}"
     )
 
     await edit_game_message(callback, text)
@@ -649,6 +707,7 @@ async def handle_surrender_cancel(
         await callback.answer(_('notif-game-not-found'))
         return
 
+    t = partial(gettext_with_locale, locale=game.locale)
     board = Board.from_dict(game.board_state)
     current_color = (
         PieceColor.WHITE
@@ -663,19 +722,21 @@ async def handle_surrender_cancel(
         else "Unknown"
     )
     turn_emoji = "⚪" if game.current_turn == PlayerColor.WHITE else "⚫"
-    turn_color = _(
+    turn_color = t(
         'color-white' if game.current_turn == PlayerColor.WHITE
         else 'color-black'
     )
 
     text = (
-        f"{_('game-header')}\n\n"
-        f"{_('game-white-player', name=white_name)}\n"
-        f"{_('game-black-player', name=black_name)}\n\n"
-        f"{_('game-current-turn', emoji=turn_emoji, color=turn_color)}"
+        f"{t('game-header')}\n\n"
+        f"{t('game-white-player', name=white_name)}\n"
+        f"{t('game-black-player', name=black_name)}\n\n"
+        f"{t('game-current-turn', emoji=turn_emoji, color=turn_color)}"
     )
 
-    keyboard = create_board_keyboard(board, str(game.id), current_color)
+    keyboard = create_board_keyboard(
+        board, str(game.id), current_color, locale=game.locale
+    )
     await edit_game_message(callback, text, keyboard)
     await callback.answer(_('notif-surrender-cancelled'))
 
