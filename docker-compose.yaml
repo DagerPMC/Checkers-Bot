@@ -23,6 +23,7 @@ services:
     image: postgres:17
     volumes:
       - postgres_local_data:/var/lib/postgresql/data/
+    restart: unless-stopped
     ports:
       - "8082:5432"
     environment:
