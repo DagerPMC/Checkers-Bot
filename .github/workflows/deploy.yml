@@ -26,7 +26,6 @@ jobs:
             set -e
             cd /home/projects/Checkers-Bot
 
-            export GIT_SSH_COMMAND="ssh -i /home/deploy/.ssh/deploy_key -o IdentitiesOnly=yes"
             echo "Pulling latest code..."
             git pull origin master
 
@@ -45,3 +44,4 @@ jobs:
             echo "Deployment completed"
           )
           EOF
+
