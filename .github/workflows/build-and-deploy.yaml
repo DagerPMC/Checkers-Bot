@@ -61,7 +61,7 @@ jobs:
       - name: Update image tag
         run: |
           cd gitops/apps/checkers/${{ env.APP_NAME }}
-          sed -i 's|image: ghcr.io/.*/${{ env.APP_NAME }}:.*|image: ${{ env.REGISTRY }}/${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }}|' deployment.yaml
+          sed -i 's|image: ghcr.io/.*/checkers-bot:.*|image: ${{ env.REGISTRY }}/${{ needs.build.outputs.image_name }}:${{ needs.build.outputs.image_tag }}|' deployment.yaml
           cat deployment.yaml
 
       - name: Commit and push
