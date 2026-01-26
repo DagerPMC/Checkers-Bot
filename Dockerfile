@@ -24,6 +24,7 @@ FROM base as prod
 
 COPY bot bot
 COPY config config
+COPY locales locales
 
 FROM prod AS dev
 
